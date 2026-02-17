@@ -153,6 +153,7 @@ export default function Lobby() {
   const getMinPlayers = (game: GameType) => {
     if (game === 'cah') return 3;
     if (game === 'codenames') return 4;
+    if (game === 'wmlt') return 3;
     return 2;
   };
 
@@ -161,6 +162,7 @@ export default function Lobby() {
       case 'pictionary': return "Scribbl n' Guess";
       case 'cah': return 'Cards Against Humanity';
       case 'codenames': return 'Codenames';
+      case 'wmlt': return "Who's Most Likely To";
       default: return '';
     }
   };
@@ -170,6 +172,7 @@ export default function Lobby() {
       case 'pictionary': return '/pictionary-icon.png';
       case 'cah': return '/cah-icon.png';
       case 'codenames': return '/codenames-icon.png';
+      case 'wmlt': return '/wmlt-icon.png';
       default: return '';
     }
   };
@@ -276,11 +279,41 @@ export default function Lobby() {
             >
               <img src="/codenames-icon.png" alt="Codenames" className="game-icon-img" />
             </button>
+            <button
+              className={`game-select-btn ${selectedGame === 'wmlt' ? 'selected' : ''}`}
+              onClick={() => handleSelectGame('wmlt')}
+            >
+              <img src="/wmlt-icon.png" alt="Who's Most Likely To" className="game-icon-img" />
+            </button>
           </div>
 
           {selectedGame && players.length < getMinPlayers(selectedGame) && (
             <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
               Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {selectedGame === 'cah' ? 'Cards Against Humanity' : selectedGame === 'codenames' ? 'Codenames' : 'Pictionary'}
+            </div>
+          )}
+
+          {/* Round count selector for WMLT */}
+          {selectedGame === 'wmlt' && (
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[5, 10, 15].map((count) => (
+                  <button
+                    key={count}
+                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                    onClick={() => handleRoundCountChange(count)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.95rem',
+                      fontWeight: roundCount === count ? 700 : 400,
+                    }}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -324,7 +357,7 @@ export default function Lobby() {
               {getGameName(selectedGame)}
             </span>
           </div>
-          {selectedGame === 'pictionary' && (
+          {(selectedGame === 'pictionary' || selectedGame === 'wmlt') && (
             <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
               {roundCount} rounds
             </div>

@@ -6,6 +6,7 @@ import useLobbyStore from '../store/lobbyStore';
 import PictionaryGame from './PictionaryGame';
 import CAHGameWrapper from '../games/cah/CAHGameWrapper';
 import CodenamesGameWrapper from '../games/codenames/CodenamesGameWrapper';
+import WMLTGameWrapper from '../games/wmlt/WMLTGameWrapper';
 
 export default function GameRouter() {
   const { game, roomCode } = useParams();
@@ -24,6 +25,8 @@ export default function GameRouter() {
       return <CAHGameWrapper />;
     case 'codenames':
       return <CodenamesGameWrapper />;
+    case 'wmlt':
+      return <WMLTGameWrapper />;
     default:
       return <Navigate to={`/lobby/${roomCode}`} replace />;
   }
