@@ -1,0 +1,482 @@
+/* Cards Against Humanity - Styles */
+
+.cah-layout {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cah-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+}
+
+.cah-round {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.cah-timer {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.cah-status {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Black Card */
+.cah-black-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cah-black-card {
+  background: #000;
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 280px;
+  max-width: 400px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.cah-black-card.small {
+  min-height: auto;
+  padding: 16px;
+}
+
+.cah-black-card.large {
+  min-width: 320px;
+  max-width: 500px;
+  padding: 32px;
+}
+
+.cah-black-card .cah-card-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.cah-pick-indicator {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: #fff;
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cah-czar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.cah-czar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* White Cards */
+.cah-white-card {
+  background: #fff;
+  color: #000;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 140px;
+  max-width: 180px;
+  min-height: 120px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.cah-white-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.cah-white-card.selected {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 20px var(--glow-primary), 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.cah-white-card .cah-card-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cah-selection-order {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  background: var(--accent-primary);
+  color: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Hand */
+.cah-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  margin-top: auto;
+}
+
+.cah-selection-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+}
+
+/* Waiting states */
+.cah-czar-waiting,
+.cah-submitted-waiting {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+}
+
+.cah-waiting-icon {
+  font-size: 4rem;
+}
+
+.cah-waiting-progress {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+/* Submissions (judging phase) */
+.cah-submissions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.cah-submission {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.cah-submission.clickable {
+  cursor: pointer;
+}
+
+.cah-submission.clickable:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 20px var(--glow-primary);
+  transform: scale(1.02);
+}
+
+.cah-submission-cards {
+  display: flex;
+  gap: 8px;
+}
+
+.cah-white-card.in-submission {
+  min-width: 120px;
+  max-width: 150px;
+  min-height: 100px;
+  cursor: inherit;
+}
+
+.cah-white-card.in-submission:hover {
+  transform: none;
+}
+
+.cah-filled-sentence {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
+
+.cah-filled-answer {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.cah-czar-prompt {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.cah-waiting-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 16px;
+}
+
+/* Reveal */
+.cah-reveal {
+  align-items: center;
+  justify-content: center;
+}
+
+.cah-reveal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.cah-winner-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cah-winner-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--accent-primary);
+  box-shadow: 0 0 30px var(--glow-primary);
+}
+
+.cah-winner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cah-winning-combo {
+  margin: 20px 0;
+}
+
+.cah-winning-answer {
+  color: #00ff88;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.cah-mini-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 250px;
+}
+
+.cah-mini-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.cah-mini-score.winner {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-primary);
+}
+
+.cah-mini-score .rank {
+  width: 24px;
+  text-align: center;
+}
+
+.cah-mini-score .name {
+  flex: 1;
+}
+
+.cah-mini-score .score {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.cah-next-round-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Game Over */
+.cah-game-over {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.cah-game-over-content {
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.cah-final-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0;
+}
+
+.cah-winner-crown {
+  font-size: 3rem;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.cah-winner-avatar.large {
+  width: 120px;
+  height: 120px;
+  border-width: 6px;
+}
+
+.cah-winner-score {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.cah-winner-title {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cah-final-leaderboard {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.cah-final-leaderboard h3 {
+  margin-bottom: 16px;
+}
+
+.cah-leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.cah-leaderboard-row.you {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-tertiary);
+}
+
+.cah-leaderboard-row .rank {
+  width: 32px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.cah-leaderboard-row .avatar-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cah-leaderboard-row .name {
+  flex: 1;
+}
+
+.cah-leaderboard-row .score {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.cah-game-over-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cah-hand {
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .cah-white-card {
+    min-width: 110px;
+    max-width: 140px;
+    min-height: 100px;
+    padding: 12px;
+  }
+  
+  .cah-white-card .cah-card-text {
+    font-size: 0.85rem;
+  }
+  
+  .cah-black-card .cah-card-text {
+    font-size: 1.1rem;
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/((?!assets|avatars|cah|.*\\.png|.*\\.svg|.*\\.ico).*)", "destination": "/index.html" }
+  ]
+}
