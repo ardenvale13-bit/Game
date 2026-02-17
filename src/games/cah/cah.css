@@ -51,8 +51,8 @@
   border: none;
   border-radius: 16px;
   padding: 28px 22px;
-  width: 340px;
-  min-height: 320px;
+  width: 260px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -62,19 +62,19 @@
 }
 
 .cah-black-card.small {
-  width: 280px;
-  min-height: 220px;
+  width: 210px;
+  min-height: 300px;
   padding: 18px 16px;
 }
 
 .cah-black-card.large {
-  width: 380px;
-  min-height: 360px;
+  width: 300px;
+  min-height: 430px;
   padding: 32px 24px;
 }
 
 .cah-black-card .cah-card-text {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   line-height: 1.4;
   color: #fff;
@@ -116,9 +116,9 @@
   color: #1a1a2e;
   border: 2px solid rgba(180, 170, 220, 0.3);
   border-radius: 12px;
-  padding: 12px 10px;
-  width: 115px;
-  min-height: 175px;
+  padding: 14px 12px;
+  width: 130px;
+  min-height: 195px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -160,7 +160,7 @@
 }
 
 .cah-white-card .cah-card-text {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
   line-height: 1.3;
   color: #1a1a2e;
@@ -297,8 +297,8 @@
 }
 
 .cah-white-card.in-submission {
-  width: 105px;
-  min-height: 155px;
+  width: 120px;
+  min-height: 175px;
   cursor: inherit;
   animation: none;
 }
@@ -548,18 +548,18 @@
   }
 
   .cah-white-card {
-    width: 95px;
-    min-height: 145px;
-    padding: 8px 6px;
+    width: 105px;
+    min-height: 160px;
+    padding: 10px 8px;
   }
 
   .cah-white-card .cah-card-text {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 
   .cah-black-card {
-    width: 300px;
-    min-height: 260px;
+    width: 220px;
+    min-height: 310px;
     padding: 20px 16px;
   }
 
@@ -568,12 +568,12 @@
   }
 
   .cah-black-card.small {
-    width: 240px;
-    min-height: 180px;
+    width: 180px;
+    min-height: 250px;
   }
 
   .cah-white-card.in-submission {
-    width: 85px;
-    min-height: 125px;
+    width: 95px;
+    min-height: 145px;
   }
 }
