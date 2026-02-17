@@ -215,13 +215,14 @@ h3 {
 /* Avatar grid */
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
 }
 
 .avatar-option {
-  width: 90px;
-  height: 90px;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 90px;
   border-radius: 50%;
   cursor: pointer;
   border: 3px solid transparent;
@@ -582,15 +583,59 @@ h3 {
   .game-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 10px;
+    gap: 10px;
   }
-  
+
   .game-layout .sidebar-left {
     flex-direction: row;
     overflow-x: auto;
+    gap: 8px;
   }
-  
+
+  .game-layout .sidebar-left .card {
+    min-width: fit-content;
+    padding: 8px !important;
+  }
+
+  .game-layout .main-area {
+    min-height: 280px;
+  }
+
   .game-layout .sidebar-right {
-    max-height: 200px;
+    min-height: 150px;
+    max-height: 250px;
+  }
+
+  /* Ensure chat input is always visible on mobile */
+  .game-layout .sidebar-right .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .game-layout .sidebar-right .chat-messages {
+    flex: 1;
+    min-height: 60px;
+    max-height: 140px;
+  }
+
+  .game-layout .sidebar-right .chat-input-container {
+    flex-shrink: 0;
+  }
+
+  /* Tools bar compact on mobile */
+  .tools-bar {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .tool-btn {
+    width: 36px;
+    height: 36px;
   }
 }
 

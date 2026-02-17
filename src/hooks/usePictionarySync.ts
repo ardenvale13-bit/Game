@@ -40,6 +40,13 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
       store.getState().clearCanvas();
     });
 
+    // Canvas snapshot (for undo/redo sync — replaces the canvas with a bitmap)
+    channel.on('broadcast', { event: 'canvas_snapshot' }, ({ payload }) => {
+      if (!payload) return;
+      const { dataUrl } = payload as { dataUrl: string };
+      store.setState({ canvasSnapshot: dataUrl });
+    });
+
     // --- GAME STATE EVENTS (non-host clients listen) ---
     if (!isHost) {
       channel.on('broadcast', { event: 'game_state' }, ({ payload }) => {
@@ -357,6 +364,17 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
     });
   }, []);
 
+  // Broadcast canvas snapshot (for undo/redo sync)
+  const broadcastSnapshot = useCallback((dataUrl: string) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'canvas_snapshot',
+      payload: { dataUrl },
+    });
+  }, []);
+
   return {
     isReady,
     broadcastGameState,
@@ -367,6 +385,7 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
     broadcastWordSelection,
     broadcastRoundEnd,
     broadcastChatMessage,
+    broadcastSnapshot,
     channel: channelRef,
   };
 }

@@ -58,6 +58,7 @@ export default function PictionaryGame() {
     broadcastWordSelection,
     broadcastRoundEnd,
     broadcastChatMessage,
+    broadcastSnapshot,
   } = usePictionarySync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
@@ -269,6 +270,7 @@ export default function PictionaryGame() {
           <DrawingCanvas
             onDrawBroadcast={isDrawing ? broadcastDraw : undefined}
             onClearBroadcast={isDrawing ? broadcastClearCanvas : undefined}
+            onSnapshotBroadcast={isDrawing ? broadcastSnapshot : undefined}
           />
         )}
       </div>

@@ -104,11 +104,6 @@ export default function CAHGameWrapper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isHost]);
 
-  // Track previous phase
-  useEffect(() => {
-    prevPhaseRef.current = phase;
-  }, [phase]);
-
   // HOST: when store transitions to judging (all submitted), broadcast
   useEffect(() => {
     if (!isHost) return;
@@ -226,6 +221,12 @@ export default function CAHGameWrapper() {
     broadcastSubmissionCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submissions.length, isHost, phase]);
+
+  // IMPORTANT: Track previous phase LAST — must run after all detection effects above
+  // so that prevPhaseRef still holds the old value when detections check it
+  useEffect(() => {
+    prevPhaseRef.current = phase;
+  }, [phase]);
 
   // --- Handlers for child components ---
 

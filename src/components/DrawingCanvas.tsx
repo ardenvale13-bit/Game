@@ -5,8 +5,10 @@ import type { DrawCommand } from '../store/gameStore';
 const BRUSH_SIZES = [2, 5, 10, 18, 28, 40];
 
 const COLOR_PRESETS = [
-  '#000000', '#FFFFFF', '#EF4444', '#F97316', '#EAB308',
-  '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#78716C',
+  '#000000', '#FFFFFF', '#808080', '#4B3621',
+  '#EF4444', '#FF6B6B', '#F97316', '#EAB308',
+  '#22C55E', '#15803D', '#3B82F6', '#1D4ED8',
+  '#8B5CF6', '#EC4899', '#F472B6', '#78716C',
 ];
 
 interface CanvasState {
@@ -16,9 +18,10 @@ interface CanvasState {
 interface DrawingCanvasProps {
   onDrawBroadcast?: (cmd: DrawCommand) => void;
   onClearBroadcast?: () => void;
+  onSnapshotBroadcast?: (dataUrl: string) => void;
 }
 
-export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: DrawingCanvasProps) {
+export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSnapshotBroadcast }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -39,6 +42,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
   const {
     phase,
     drawCommands,
+    canvasSnapshot,
     addDrawCommand,
     clearCanvas,
     isCurrentPlayerDrawing,
@@ -48,6 +52,31 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
 
   // Get canvas display dimensions
   const getCanvasRect = () => containerRef.current?.getBoundingClientRect() || null;
+
+  // --- SNAPSHOT: render canvas snapshot from undo/redo sync ---
+  useEffect(() => {
+    if (canDraw || !canvasSnapshot) return; // Only for non-drawers
+
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      // Reset transform to draw at pixel level then restore
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Clear the snapshot so it doesn't re-trigger
+      useGameStore.setState({ canvasSnapshot: null });
+    };
+    img.src = canvasSnapshot;
+  }, [canvasSnapshot, canDraw]);
 
   // Clear canvas and reset replay on new round
   useEffect(() => {
@@ -150,6 +179,16 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
     setRedoStack([]);
   }, []);
 
+  // Broadcast canvas snapshot after undo/redo so other players see the change
+  const broadcastCanvasSnapshot = useCallback(() => {
+    if (!onSnapshotBroadcast) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // Use low-quality JPEG to reduce payload size
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+    onSnapshotBroadcast(dataUrl);
+  }, [onSnapshotBroadcast]);
+
   // Undo function
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0 || !canDraw) return;
@@ -173,7 +212,10 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-  }, [undoStack, canDraw]);
+
+    // Sync the undo visually to other players
+    broadcastCanvasSnapshot();
+  }, [undoStack, canDraw, broadcastCanvasSnapshot]);
 
   // Redo function
   const handleRedo = useCallback(() => {
@@ -195,7 +237,10 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
     if (nextState?.imageData) {
       ctx.putImageData(nextState.imageData, 0, 0);
     }
-  }, [redoStack, canDraw]);
+
+    // Sync the redo visually to other players
+    broadcastCanvasSnapshot();
+  }, [redoStack, canDraw, broadcastCanvasSnapshot]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -230,11 +275,20 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
       const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
 
-      const ctx = canvas.getContext('2d');
-      let savedImage: ImageData | null = null;
-      if (ctx && canvas.width > 0 && canvas.height > 0) {
-        savedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // Save current drawing as a bitmap image (scales properly unlike ImageData)
+      let savedBitmap: HTMLCanvasElement | null = null;
+      if (canvas.width > 0 && canvas.height > 0) {
+        savedBitmap = document.createElement('canvas');
+        savedBitmap.width = canvas.width;
+        savedBitmap.height = canvas.height;
+        const tmpCtx = savedBitmap.getContext('2d');
+        if (tmpCtx) {
+          tmpCtx.drawImage(canvas, 0, 0);
+        }
       }
+
+      const oldWidth = canvas.width;
+      const oldHeight = canvas.height;
 
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
@@ -250,8 +304,9 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
         newCtx.fillStyle = '#FFFFFF';
         newCtx.fillRect(0, 0, rect.width, rect.height);
 
-        if (savedImage) {
-          newCtx.putImageData(savedImage, 0, 0);
+        // Restore drawing scaled to new dimensions (handles rotation properly)
+        if (savedBitmap && oldWidth > 0 && oldHeight > 0) {
+          newCtx.drawImage(savedBitmap, 0, 0, oldWidth, oldHeight, 0, 0, rect.width, rect.height);
         }
       }
     };
@@ -642,7 +697,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
             </label>
 
             {/* Quick color presets */}
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '200px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '3px', maxWidth: '220px' }}>
               {COLOR_PRESETS.map((color) => (
                 <button
                   key={color}
@@ -653,8 +708,8 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: Dra
                       : color === '#FFFFFF'
                         ? '2px solid #444'
                         : '2px solid transparent',
-                    width: '26px',
-                    height: '26px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',

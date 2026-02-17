@@ -74,7 +74,8 @@ export interface GameState {
   
   // Drawing
   drawCommands: DrawCommand[];
-  
+  canvasSnapshot: string | null; // data URL for undo/redo sync
+
   // Chat
   messages: ChatMessage[];
   
@@ -155,6 +156,7 @@ const initialState: GameState = {
   wordHint: '',
   timeRemaining: 0,
   drawCommands: [],
+  canvasSnapshot: null,
   messages: [],
   guessOrder: [],
   settings: defaultSettings,

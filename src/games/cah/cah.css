@@ -50,10 +50,9 @@
   color: #fff;
   border: none;
   border-radius: 16px;
-  padding: 24px;
-  min-width: 280px;
-  max-width: 400px;
-  min-height: 200px;
+  padding: 24px 20px;
+  width: 300px;
+  min-height: 260px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -63,18 +62,19 @@
 }
 
 .cah-black-card.small {
-  min-height: auto;
-  padding: 16px;
+  width: 240px;
+  min-height: 180px;
+  padding: 16px 14px;
 }
 
 .cah-black-card.large {
-  min-width: 320px;
-  max-width: 500px;
-  padding: 32px;
+  width: 340px;
+  min-height: 300px;
+  padding: 28px 22px;
 }
 
 .cah-black-card .cah-card-text {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.4;
   color: #fff;
@@ -116,10 +116,9 @@
   color: #1a1a2e;
   border: 2px solid rgba(180, 170, 220, 0.3);
   border-radius: 12px;
-  padding: 16px;
-  min-width: 140px;
-  max-width: 180px;
-  min-height: 140px;
+  padding: 12px 10px;
+  width: 105px;
+  min-height: 150px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -161,7 +160,7 @@
 }
 
 .cah-white-card .cah-card-text {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.3;
   color: #1a1a2e;
@@ -298,9 +297,8 @@
 }
 
 .cah-white-card.in-submission {
-  min-width: 120px;
-  max-width: 150px;
-  min-height: 100px;
+  width: 95px;
+  min-height: 130px;
   cursor: inherit;
   animation: none;
 }
@@ -545,22 +543,37 @@
 /* Responsive */
 @media (max-width: 768px) {
   .cah-hand {
-    gap: 8px;
-    padding: 12px;
+    gap: 6px;
+    padding: 10px;
   }
 
   .cah-white-card {
-    min-width: 110px;
-    max-width: 140px;
+    width: 85px;
     min-height: 120px;
-    padding: 12px;
+    padding: 8px 6px;
   }
 
   .cah-white-card .cah-card-text {
-    font-size: 0.85rem;
+    font-size: 0.65rem;
+  }
+
+  .cah-black-card {
+    width: 260px;
+    min-height: 200px;
+    padding: 18px 14px;
   }
 
   .cah-black-card .cah-card-text {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
+  }
+
+  .cah-black-card.small {
+    width: 200px;
+    min-height: 140px;
+  }
+
+  .cah-white-card.in-submission {
+    width: 75px;
+    min-height: 100px;
   }
 }
