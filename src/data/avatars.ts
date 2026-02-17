@@ -1,4 +1,4 @@
-// All 74 custom avatars for Game Time
+// All 86 custom avatars for Game Time
 // Organized by category for easier browsing
 
 export interface Avatar {
@@ -29,8 +29,11 @@ export const avatars: Avatar[] = [
   { id: 'heart_sunset', filename: 'ainsanity11_icon.png', name: 'Heart Sunset', category: 'hearts' },
   { id: 'heart_white', filename: 'ainsanity12_icon.png', name: 'Heart White', category: 'hearts' },
   { id: 'heart_gradient', filename: 'ainsanity13_icon.png', name: 'Heart Gradient', category: 'hearts' },
+  { id: 'heart_icon', filename: 'heart-icon.png', name: 'Heart', category: 'hearts' },
+  { id: 'heart2_icon', filename: 'heart2-icon.png', name: 'Heart 2', category: 'hearts' },
 
   // === CATS ===
+  { id: 'catto', filename: 'catto-icon.png', name: 'Catto', category: 'cats' },
   { id: 'cat', filename: 'cat_icon.png', name: 'Ghost Cat', category: 'cats' },
   { id: 'cat2', filename: 'cat2_icon.png', name: 'Grey Cat', category: 'cats' },
   { id: 'cat3', filename: 'cat3_icon.png', name: 'Orange Cat', category: 'cats' },
@@ -67,6 +70,14 @@ export const avatars: Avatar[] = [
   { id: 'tiger', filename: 'tiger_icon.png', name: 'Tiger', category: 'animals' },
   { id: 'tortl', filename: 'tortl_icon.png', name: 'Tortl', category: 'animals' },
   { id: 'wolf', filename: 'wolf_icon.png', name: 'Wolf', category: 'animals' },
+  { id: 'bunny', filename: 'bunny-icon.png', name: 'Bunny', category: 'animals' },
+  { id: 'capybara', filename: 'capybara-icon.png', name: 'Capybara', category: 'animals' },
+  { id: 'dino2', filename: 'dino2-icon.png', name: 'Dino 2', category: 'animals' },
+  { id: 'flamingo', filename: 'flamingo-icon.png', name: 'Flamingo', category: 'animals' },
+  { id: 'snek', filename: 'snek-icon.png', name: 'Snek', category: 'animals' },
+  { id: 'snowlep', filename: 'snowlep-icon.png', name: 'Snow Leopard', category: 'animals' },
+  { id: 'yak', filename: 'yak-icon.png', name: 'Yak', category: 'animals' },
+  { id: 'unicorn', filename: 'unicorn-icon.png', name: 'Unicorn', category: 'animals' },
 
   // === PEOPLE ===
   { id: 'boy', filename: 'boy_icon.png', name: 'Boy', category: 'people' },
@@ -94,6 +105,7 @@ export const avatars: Avatar[] = [
   { id: 'skull', filename: 'skull_icon.png', name: 'Floral Skull', category: 'misc' },
   { id: 'skull2', filename: 'skull2_icon.png', name: 'Cute Skull', category: 'misc' },
   { id: 'smile', filename: 'smile_icon.png', name: 'Heart Eyes', category: 'misc' },
+  { id: 'finn', filename: 'finn-icon.png', name: 'Finn', category: 'misc' },
 ];
 
 // Helper to get avatar by ID

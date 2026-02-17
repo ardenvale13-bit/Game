@@ -152,7 +152,26 @@ export default function Lobby() {
 
   const getMinPlayers = (game: GameType) => {
     if (game === 'cah') return 3;
+    if (game === 'codenames') return 4;
     return 2;
+  };
+
+  const getGameName = (game: GameType) => {
+    switch (game) {
+      case 'pictionary': return "Scribbl n' Guess";
+      case 'cah': return 'Cards Against Humanity';
+      case 'codenames': return 'Codenames';
+      default: return '';
+    }
+  };
+
+  const getGameIcon = (game: GameType) => {
+    switch (game) {
+      case 'pictionary': return '/pictionary-icon.png';
+      case 'cah': return '/cah-icon.png';
+      case 'codenames': return '/codenames-icon.png';
+      default: return '';
+    }
   };
 
   return (
@@ -251,11 +270,17 @@ export default function Lobby() {
             >
               <img src="/cah-icon.png" alt="Cards Against Humanity" className="game-icon-img" />
             </button>
+            <button
+              className={`game-select-btn ${selectedGame === 'codenames' ? 'selected' : ''}`}
+              onClick={() => handleSelectGame('codenames')}
+            >
+              <img src="/codenames-icon.png" alt="Codenames" className="game-icon-img" />
+            </button>
           </div>
 
           {selectedGame && players.length < getMinPlayers(selectedGame) && (
             <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
-              Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {selectedGame === 'cah' ? 'Cards Against Humanity' : 'Pictionary'}
+              Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {selectedGame === 'cah' ? 'Cards Against Humanity' : selectedGame === 'codenames' ? 'Codenames' : 'Pictionary'}
             </div>
           )}
 
@@ -291,12 +316,12 @@ export default function Lobby() {
           <div className="text-muted mb-1" style={{ fontSize: '0.9rem' }}>Selected Game</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <img
-              src={selectedGame === 'pictionary' ? '/pictionary-icon.png' : '/cah-icon.png'}
-              alt={selectedGame}
+              src={getGameIcon(selectedGame)}
+              alt={selectedGame || ''}
               style={{ width: '32px', height: '32px', borderRadius: '6px' }}
             />
             <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-              {selectedGame === 'pictionary' ? "Scribbl n' Guess" : 'Cards Against Humanity'}
+              {getGameName(selectedGame)}
             </span>
           </div>
           {selectedGame === 'pictionary' && (

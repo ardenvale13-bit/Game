@@ -50,9 +50,9 @@
   color: #fff;
   border: none;
   border-radius: 16px;
-  padding: 24px 20px;
-  width: 300px;
-  min-height: 260px;
+  padding: 28px 22px;
+  width: 340px;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -62,15 +62,15 @@
 }
 
 .cah-black-card.small {
-  width: 240px;
-  min-height: 180px;
-  padding: 16px 14px;
+  width: 280px;
+  min-height: 220px;
+  padding: 18px 16px;
 }
 
 .cah-black-card.large {
-  width: 340px;
-  min-height: 300px;
-  padding: 28px 22px;
+  width: 380px;
+  min-height: 360px;
+  padding: 32px 24px;
 }
 
 .cah-black-card .cah-card-text {
@@ -117,8 +117,8 @@
   border: 2px solid rgba(180, 170, 220, 0.3);
   border-radius: 12px;
   padding: 12px 10px;
-  width: 105px;
-  min-height: 150px;
+  width: 115px;
+  min-height: 175px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -297,8 +297,8 @@
 }
 
 .cah-white-card.in-submission {
-  width: 95px;
-  min-height: 130px;
+  width: 105px;
+  min-height: 155px;
   cursor: inherit;
   animation: none;
 }
@@ -548,8 +548,8 @@
   }
 
   .cah-white-card {
-    width: 85px;
-    min-height: 120px;
+    width: 95px;
+    min-height: 145px;
     padding: 8px 6px;
   }
 
@@ -558,9 +558,9 @@
   }
 
   .cah-black-card {
-    width: 260px;
-    min-height: 200px;
-    padding: 18px 14px;
+    width: 300px;
+    min-height: 260px;
+    padding: 20px 16px;
   }
 
   .cah-black-card .cah-card-text {
@@ -568,12 +568,12 @@
   }
 
   .cah-black-card.small {
-    width: 200px;
-    min-height: 140px;
+    width: 240px;
+    min-height: 180px;
   }
 
   .cah-white-card.in-submission {
-    width: 75px;
-    min-height: 100px;
+    width: 85px;
+    min-height: 125px;
   }
 }
