@@ -11,11 +11,15 @@ import WMLTResults from './components/WMLTResults';
 import WMLTGameOver from './components/WMLTGameOver';
 import './wmlt.css';
 
+// Raw store reference for imperative access (getState/setState)
+const wmltStore = useWMLTStore;
+
 export default function WMLTGameWrapper() {
   const navigate = useNavigate();
   const { roomCode } = useParams();
   const lobbyStore = useLobbyStore();
-  const store = useWMLTStore();
+  // Hook for reactive rendering (phase changes, etc.)
+  const { phase } = useWMLTStore();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const gameStartedRef = useRef(false);
 
@@ -37,10 +41,10 @@ export default function WMLTGameWrapper() {
 
   // Initialize store from lobby
   useEffect(() => {
-    store.initFromLobby(lobbyStore.players);
+    wmltStore.getState().initFromLobby(lobbyStore.players);
     // Use lobby round count for max rounds (default 10 if not set for wmlt)
     const rounds = lobbyStore.roundCount || 10;
-    store.setMaxRounds(rounds);
+    wmltStore.getState().setMaxRounds(rounds);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Start game when channel is ready (host only)
@@ -56,11 +60,11 @@ export default function WMLTGameWrapper() {
 
   // Start a new round (host only)
   const startNewRound = useCallback(() => {
-    const state = store.getState();
+    const state = wmltStore.getState();
     const { prompts, indices } = getRandomPrompts(1, state.usedPromptIndices);
     if (prompts.length === 0) return;
 
-    store.startRound(prompts[0], indices[0]);
+    wmltStore.getState().startRound(prompts[0], indices[0]);
 
     // Small delay to ensure state is committed
     setTimeout(() => {
@@ -77,12 +81,11 @@ export default function WMLTGameWrapper() {
       timerRef.current = null;
     }
 
-    const { phase } = store;
     if (phase === 'game-over') return;
 
     timerRef.current = setInterval(() => {
-      const state = store.getState();
-      const remaining = store.tickTimer();
+      const state = wmltStore.getState();
+      const remaining = state.tickTimer();
 
       // Sync timer every 2 seconds
       if (remaining % 2 === 0) {
@@ -90,8 +93,8 @@ export default function WMLTGameWrapper() {
       }
 
       // Check if all votes are in during voting phase → reveal early
-      if (state.phase === 'voting' && remaining > 0 && store.allVotesIn()) {
-        store.setState({ timeRemaining: 0 });
+      if (state.phase === 'voting' && remaining > 0 && wmltStore.getState().allVotesIn()) {
+        wmltStore.setState({ timeRemaining: 0 });
         handlePhaseEnd('voting');
         return;
       }
@@ -107,29 +110,29 @@ export default function WMLTGameWrapper() {
         timerRef.current = null;
       }
     };
-  }, [hostPlayer, store.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hostPlayer, phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePhaseEnd = useCallback((phase: string) => {
+  const handlePhaseEnd = useCallback((currentPhase: string) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    if (phase === 'voting') {
+    if (currentPhase === 'voting') {
       // Reveal results
-      store.revealResults();
+      wmltStore.getState().revealResults();
       setTimeout(() => {
         broadcastResults();
       }, 100);
-    } else if (phase === 'results') {
+    } else if (currentPhase === 'results') {
       // Check if game is over
-      const state = store.getState();
+      const state = wmltStore.getState();
       if (state.currentRound >= state.maxRounds) {
-        store.endGame();
+        wmltStore.getState().endGame();
         setTimeout(() => {
           broadcastGameOver();
           // Update lobby scores
-          state.players.forEach(p => {
+          wmltStore.getState().players.forEach((p: { id: string; score: number }) => {
             if (p.score > 0) {
               lobbyStore.updatePlayerScore(p.id, p.score);
             }
@@ -152,8 +155,8 @@ export default function WMLTGameWrapper() {
   // Play again
   const handlePlayAgain = useCallback(() => {
     if (hostPlayer) {
-      store.reset();
-      store.initFromLobby(lobbyStore.players);
+      wmltStore.getState().reset();
+      wmltStore.getState().initFromLobby(lobbyStore.players);
       gameStartedRef.current = false;
 
       // Will re-trigger the start effect
@@ -166,7 +169,7 @@ export default function WMLTGameWrapper() {
 
   // Back to lobby
   const handleBackToLobby = useCallback(() => {
-    store.reset();
+    wmltStore.getState().reset();
     lobbyStore.endGame();
     navigate(`/lobby/${roomCode}`);
   }, [roomCode, navigate, lobbyStore]);
@@ -183,16 +186,16 @@ export default function WMLTGameWrapper() {
 
   return (
     <div className="wmlt-layout">
-      {store.phase === 'voting' && (
+      {phase === 'voting' && (
         <WMLTVoting
           currentPlayerId={currentPlayerId || ''}
           onVote={handleVote}
         />
       )}
-      {store.phase === 'results' && (
+      {phase === 'results' && (
         <WMLTResults />
       )}
-      {store.phase === 'game-over' && (
+      {phase === 'game-over' && (
         <WMLTGameOver
           onPlayAgain={handlePlayAgain}
           onBackToLobby={handleBackToLobby}
