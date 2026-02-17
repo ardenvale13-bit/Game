@@ -17,6 +17,7 @@ export default function PictionaryGame() {
   const initialized = useRef(false);
 
   const lobbyPlayers = useLobbyStore((state) => state.players);
+  const lobbyRoundCount = useLobbyStore((state) => state.roundCount);
   const endLobbyGame = useLobbyStore((state) => state.endGame);
 
   const {
@@ -37,6 +38,7 @@ export default function PictionaryGame() {
     setRoomCode,
     setCurrentPlayer,
     addPlayer,
+    updateSettings,
     startWordSelection,
   } = useGameStore();
 
@@ -72,6 +74,11 @@ export default function PictionaryGame() {
       const currentLobbyPlayer = useLobbyStore.getState().currentPlayerId;
       if (currentLobbyPlayer) setCurrentPlayer(currentLobbyPlayer);
 
+      // Apply round count from lobby settings
+      if (lobbyRoundCount) {
+        updateSettings({ rounds: lobbyRoundCount });
+      }
+
       lobbyPlayers.forEach((p, idx) => {
         addPlayer({
           id: p.id,
@@ -91,7 +98,7 @@ export default function PictionaryGame() {
       });
       // Game start is handled below — waits for sync channel to be ready
     }
-  }, [lobbyPlayers, players.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer]);
+  }, [lobbyPlayers, players.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer, updateSettings, lobbyRoundCount]);
 
   // HOST: start game only AFTER the sync channel is confirmed connected
   const gameStarted = useRef(false);

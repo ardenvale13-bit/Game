@@ -24,6 +24,9 @@ interface LobbyState {
   // Game selection
   selectedGame: GameType;
   isInGame: boolean;
+
+  // Game settings
+  roundCount: number; // For Pictionary: 3, 5, or 10
 }
 
 interface LobbyActions {
@@ -39,8 +42,9 @@ interface LobbyActions {
   updatePlayerScore: (id: string, points: number) => void;
   resetScores: () => void;
 
-  // Game selection
+  // Game selection & settings
   selectGame: (game: GameType) => void;
+  setRoundCount: (count: number) => void;
   startGame: () => void;
   endGame: () => void;
 
@@ -61,6 +65,7 @@ const initialState: LobbyState = {
   currentPlayerId: null,
   selectedGame: null,
   isInGame: false,
+  roundCount: 3,
 };
 
 const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
@@ -96,8 +101,9 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
     players: state.players.map(p => ({ ...p, score: 0 })),
   })),
 
-  // Game selection
+  // Game selection & settings
   selectGame: (game) => set({ selectedGame: game }),
+  setRoundCount: (count) => set({ roundCount: count }),
 
   startGame: () => set({ isInGame: true }),
 

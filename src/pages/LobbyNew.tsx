@@ -18,7 +18,9 @@ export default function Lobby() {
     currentPlayerId,
     roomName,
     selectedGame,
+    roundCount,
     selectGame,
+    setRoundCount,
     startGame,
     leaveLobby,
     setPlayers,
@@ -81,12 +83,20 @@ export default function Lobby() {
       case 'game_selected':
         selectGame(event.payload.game as GameType);
         break;
+      case 'settings_changed':
+        if (event.payload.roundCount !== undefined) {
+          setRoundCount(event.payload.roundCount as number);
+        }
+        break;
       case 'game_start':
+        if (event.payload.roundCount !== undefined) {
+          setRoundCount(event.payload.roundCount as number);
+        }
         startGame();
         navigate(`/play/${event.payload.game}/${roomCode}`);
         break;
     }
-  }, [selectGame, startGame, navigate, roomCode]);
+  }, [selectGame, setRoundCount, startGame, navigate, roomCode]);
 
   const { isConnected, sendEvent } = useRealtimeRoom({
     roomCode: roomCode || null,
@@ -99,6 +109,12 @@ export default function Lobby() {
   const handleSelectGame = (game: GameType) => {
     selectGame(game);
     sendEvent('game_selected', { game });
+  };
+
+  // When host changes round count, broadcast to everyone
+  const handleRoundCountChange = (count: number) => {
+    setRoundCount(count);
+    sendEvent('settings_changed', { roundCount: count });
   };
 
   const handleCopyCode = async () => {
@@ -119,8 +135,8 @@ export default function Lobby() {
   const handleStartGame = () => {
     if (!canStartGame() || !selectedGame) return;
     startGame();
-    // Broadcast to all clients to start
-    sendEvent('game_start', { game: selectedGame });
+    // Broadcast to all clients to start (include settings)
+    sendEvent('game_start', { game: selectedGame, roundCount });
     navigate(`/play/${selectedGame}/${roomCode}`);
   };
 
@@ -242,6 +258,30 @@ export default function Lobby() {
               Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {selectedGame === 'cah' ? 'Cards Against Humanity' : 'Pictionary'}
             </div>
           )}
+
+          {/* Round count selector for Scribbl n' Draw */}
+          {selectedGame === 'pictionary' && (
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[3, 5, 10].map((count) => (
+                  <button
+                    key={count}
+                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                    onClick={() => handleRoundCountChange(count)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.95rem',
+                      fontWeight: roundCount === count ? 700 : 400,
+                    }}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -259,6 +299,11 @@ export default function Lobby() {
               {selectedGame === 'pictionary' ? "Scribbl n' Guess" : 'Cards Against Humanity'}
             </span>
           </div>
+          {selectedGame === 'pictionary' && (
+            <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
+              {roundCount} rounds
+            </div>
+          )}
         </div>
       )}
 

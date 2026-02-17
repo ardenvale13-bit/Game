@@ -2,7 +2,12 @@
 import useCAHStore from '../cahStore';
 import type { WhiteCard } from '../cardData';
 
-export default function CAHPlaying() {
+interface CAHPlayingProps {
+  onSubmitCards?: (cardIds: string[]) => void;
+  isHost?: boolean;
+}
+
+export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
   const {
     players,
     currentPlayerId,
@@ -22,8 +27,8 @@ export default function CAHPlaying() {
   const czar = getCurrentCzar();
   const isCzar = isCurrentPlayerCzar();
   const requiredPicks = currentBlackCard?.pick || 1;
-  const canSubmit = currentPlayer && 
-    currentPlayer.selectedCards.length === requiredPicks && 
+  const canSubmit = currentPlayer &&
+    currentPlayer.selectedCards.length === requiredPicks &&
     !currentPlayer.hasSubmitted;
 
   // Format black card text with blanks
@@ -32,7 +37,7 @@ export default function CAHPlaying() {
       <span key={idx}>
         {part}
         {idx < arr.length - 1 && (
-          <span style={{ 
+          <span style={{
             display: 'inline-block',
             minWidth: '80px',
             borderBottom: '3px solid #fff',
@@ -46,7 +51,7 @@ export default function CAHPlaying() {
 
   const handleCardClick = (card: WhiteCard) => {
     if (!currentPlayer || currentPlayer.hasSubmitted || isCzar) return;
-    
+
     const isSelected = currentPlayer.selectedCards.find(c => c.id === card.id);
     if (isSelected) {
       deselectCard(currentPlayerId!, card);
@@ -56,7 +61,14 @@ export default function CAHPlaying() {
   };
 
   const handleSubmit = () => {
-    if (canSubmit) {
+    if (!canSubmit || !currentPlayer) return;
+
+    if (onSubmitCards) {
+      // Use the broadcast callback (handles both host and non-host)
+      const cardIds = currentPlayer.selectedCards.map(c => c.id);
+      onSubmitCards(cardIds);
+    } else {
+      // Fallback: submit locally
       submitCards(currentPlayerId!);
     }
   };
@@ -90,8 +102,8 @@ export default function CAHPlaying() {
           )}
         </div>
         <div className="cah-czar-info">
-          <img 
-            src={`/avatars/${czar?.avatarFilename}`} 
+          <img
+            src={`/avatars/${czar?.avatarFilename}`}
             alt={czar?.name}
             className="cah-czar-avatar"
           />
@@ -121,7 +133,7 @@ export default function CAHPlaying() {
           {currentPlayer && currentPlayer.selectedCards.length > 0 && (
             <div className="cah-selection-bar">
               <span>Selected: {currentPlayer.selectedCards.length} / {requiredPicks}</span>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
@@ -137,13 +149,13 @@ export default function CAHPlaying() {
             {currentPlayer?.hand.map((card, idx) => {
               const isSelected = currentPlayer.selectedCards.find(c => c.id === card.id);
               const selectionOrder = currentPlayer.selectedCards.findIndex(c => c.id === card.id) + 1;
-              
+
               return (
                 <div
                   key={card.id}
                   className={`cah-white-card ${isSelected ? 'selected' : ''}`}
                   onClick={() => handleCardClick(card)}
-                  style={{ 
+                  style={{
                     transform: isSelected ? 'translateY(-20px)' : 'none',
                     zIndex: isSelected ? 10 : idx,
                   }}

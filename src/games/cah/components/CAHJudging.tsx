@@ -1,7 +1,12 @@
 // CAH Judging Component - Czar picks the winner
 import useCAHStore from '../cahStore';
 
-export default function CAHJudging() {
+interface CAHJudgingProps {
+  onPickWinner?: (winnerId: string) => void;
+  isHost?: boolean;
+}
+
+export default function CAHJudging({ onPickWinner }: CAHJudgingProps) {
   const {
     currentBlackCard,
     currentRound,
@@ -32,7 +37,13 @@ export default function CAHJudging() {
   };
 
   const handleSelectWinner = (playerId: string) => {
-    if (isCzar) {
+    if (!isCzar) return;
+
+    if (onPickWinner) {
+      // Use the broadcast callback (handles both host and non-host czar)
+      onPickWinner(playerId);
+    } else {
+      // Fallback: select locally
       selectWinner(playerId);
     }
   };
@@ -74,7 +85,7 @@ export default function CAHJudging() {
                 </div>
               ))}
             </div>
-            
+
             {/* Show as filled sentence */}
             <div className="cah-filled-sentence">
               {formatBlackCardWithAnswers(

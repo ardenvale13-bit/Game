@@ -1,6 +1,6 @@
 // Cards Against Humanity Multiplayer Sync via Supabase Realtime
 // Host-authoritative: host runs game logic, broadcasts state to all clients
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import useCAHStore from '../games/cah/cahStore';
@@ -15,10 +15,13 @@ interface UseCAHSyncOptions {
 
 export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const store = useCAHStore;
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
+
+    setIsReady(false);
 
     const channel = supabase.channel(`game:cah:${roomCode}`, {
       config: {
@@ -76,11 +79,18 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
           timeRemaining: number;
           submissions?: CAHSubmission[];
         };
-        const updates: Partial<ReturnType<typeof store.getState>> = { phase, timeRemaining };
+        const updates: Record<string, unknown> = { phase, timeRemaining };
         if (submissions) {
           updates.submissions = submissions;
         }
         store.setState(updates as any);
+      });
+
+      // Timer sync from host
+      channel.on('broadcast', { event: 'cah_timer_sync' }, ({ payload }) => {
+        if (!payload) return;
+        const { timeRemaining } = payload as { timeRemaining: number };
+        store.setState({ timeRemaining });
       });
 
       // Submission count update
@@ -124,6 +134,53 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         }));
         store.setState({ players, phase: 'game-over' });
       });
+
+      // Full state response (for late joiners / reconnects)
+      channel.on('broadcast', { event: 'cah_full_state' }, ({ payload }) => {
+        if (!payload) return;
+        const state = payload as {
+          phase: CAHPhase;
+          currentRound: number;
+          maxRounds: number;
+          czarIndex: number;
+          timeRemaining: number;
+          currentBlackCard: BlackCard | null;
+          submissions: CAHSubmission[];
+          players: Array<{
+            id: string;
+            name: string;
+            score: number;
+            isCzar: boolean;
+            hasSubmitted: boolean;
+          }>;
+        };
+
+        // Update player metadata without overwriting hands
+        const currentPlayers = store.getState().players;
+        const updatedPlayers = currentPlayers.map(p => {
+          const synced = state.players.find(sp => sp.id === p.id);
+          if (synced) {
+            return {
+              ...p,
+              score: synced.score,
+              isCzar: synced.isCzar,
+              hasSubmitted: synced.hasSubmitted,
+            };
+          }
+          return p;
+        });
+
+        store.setState({
+          phase: state.phase,
+          currentRound: state.currentRound,
+          maxRounds: state.maxRounds,
+          czarIndex: state.czarIndex,
+          timeRemaining: state.timeRemaining,
+          currentBlackCard: state.currentBlackCard,
+          submissions: state.submissions,
+          players: updatedPlayers,
+        });
+      });
     }
 
     if (isHost) {
@@ -141,7 +198,7 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         const selectedCards = player.hand.filter(c => cardIds.includes(c.id));
         if (selectedCards.length === 0) return;
 
-        // Temporarily set selected cards and submit
+        // Set selected cards then submit
         store.setState({
           players: store.getState().players.map(p =>
             p.id === senderId ? { ...p, selectedCards } : p
@@ -156,14 +213,68 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         const { winnerId } = payload as { winnerId: string };
         store.getState().selectWinner(winnerId);
       });
+
+      // Respond to state requests from newly connected clients
+      channel.on('broadcast', { event: 'cah_request_state' }, () => {
+        setTimeout(() => {
+          const state = store.getState();
+          if (state.phase === 'lobby') return;
+
+          channel.send({
+            type: 'broadcast',
+            event: 'cah_full_state',
+            payload: {
+              phase: state.phase,
+              currentRound: state.currentRound,
+              maxRounds: state.maxRounds,
+              czarIndex: state.czarIndex,
+              timeRemaining: state.timeRemaining,
+              currentBlackCard: state.currentBlackCard,
+              submissions: state.submissions,
+              players: state.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                score: p.score,
+                isCzar: p.isCzar,
+                hasSubmitted: p.hasSubmitted,
+              })),
+            },
+          });
+
+          // Also send each non-host player their hand
+          const nonHostPlayers = state.players.filter(p => !p.isHost);
+          nonHostPlayers.forEach(p => {
+            channel.send({
+              type: 'broadcast',
+              event: 'cah_deal_cards',
+              payload: { targetPlayerId: p.id, cards: p.hand },
+            });
+          });
+        }, 200);
+      });
     }
 
-    channel.subscribe();
-    channelRef.current = channel;
+    // Subscribe WITH callback — only set channel ref after confirmed connected
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channelRef.current = channel;
+        setIsReady(true);
+
+        // Non-host: request current game state in case we missed initial broadcasts
+        if (!isHost) {
+          channel.send({
+            type: 'broadcast',
+            event: 'cah_request_state',
+            payload: {},
+          });
+        }
+      }
+    });
 
     return () => {
       channel.unsubscribe();
       channelRef.current = null;
+      setIsReady(false);
     };
   }, [roomCode, playerId, isHost]);
 
@@ -209,15 +320,27 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     });
   }, [isHost]);
 
+  // Host broadcasts timer sync
+  const broadcastTimerSync = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel || !isHost) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'cah_timer_sync',
+      payload: { timeRemaining: store.getState().timeRemaining },
+    });
+  }, [isHost]);
+
   // Host broadcasts submission count
   const broadcastSubmissionCount = useCallback(() => {
     const channel = channelRef.current;
     if (!channel || !isHost) return;
-    const submittedIds = store.getState().players.filter(p => p.hasSubmitted).map(p => p.id);
+    const state = store.getState();
+    const submittedIds = state.players.filter(p => p.hasSubmitted).map(p => p.id);
     channel.send({
       type: 'broadcast',
       event: 'cah_submission_count',
-      payload: { submittedIds },
+      payload: { submittedIds, submissionCount: state.submissions.length },
     });
   }, [isHost]);
 
@@ -271,9 +394,11 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
   }, []);
 
   return {
+    isReady,
     broadcastRoundStart,
     broadcastDealCards,
     broadcastPhaseChange,
+    broadcastTimerSync,
     broadcastSubmissionCount,
     broadcastWinner,
     broadcastGameOver,

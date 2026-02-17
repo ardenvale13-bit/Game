@@ -1,8 +1,10 @@
-// CAH Game Wrapper - Integrates with unified lobby
-import { useEffect } from 'react';
+// CAH Game Wrapper - Integrates with unified lobby + multiplayer sync
+import { useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../../store/lobbyStore';
 import useCAHStore from './cahStore';
+import { useCAHSync } from '../../hooks/useCAHSync';
+import { shuffleArray } from './cardData';
 import CAHPlaying from './components/CAHPlaying';
 import CAHJudging from './components/CAHJudging';
 import CAHReveal from './components/CAHReveal';
@@ -11,22 +13,62 @@ import CAHGameOver from './components/CAHGameOver';
 export default function CAHGameWrapper() {
   const navigate = useNavigate();
   const { roomCode } = useParams();
-  
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialized = useRef(false);
+  const gameStarted = useRef(false);
+  const prevPhaseRef = useRef<string | null>(null);
+
   const lobbyPlayers = useLobbyStore((state) => state.players);
   const endLobbyGame = useLobbyStore((state) => state.endGame);
-  
+
   const {
     phase,
     players: cahPlayers,
+    currentPlayerId,
+    submissions,
     addPlayer,
+    setCurrentPlayer,
+    setRoomCode,
     startGame,
+    nextRound,
+    selectWinner,
+    submitCards,
+    decrementTime,
     resetGame,
   } = useCAHStore();
 
-  // Initialize CAH game with lobby players on mount
+  const currentPlayer = cahPlayers.find(p => p.id === currentPlayerId);
+  const isHost = currentPlayer?.isHost ?? false;
+
+  // --- Multiplayer sync ---
+  const {
+    isReady,
+    broadcastRoundStart,
+    broadcastDealCards,
+    broadcastPhaseChange,
+    broadcastTimerSync,
+    broadcastSubmissionCount,
+    broadcastWinner,
+    broadcastGameOver,
+    broadcastSubmitCards,
+    broadcastPickWinner,
+  } = useCAHSync({
+    roomCode: roomCode || null,
+    playerId: currentPlayerId,
+    isHost,
+  });
+
+  // Initialize CAH game with lobby players (ALL clients)
   useEffect(() => {
-    if (phase === 'lobby' && lobbyPlayers.length > 0 && cahPlayers.length === 0) {
-      // Add all lobby players to CAH
+    if (!initialized.current && lobbyPlayers.length > 0 && cahPlayers.length === 0) {
+      initialized.current = true;
+
+      if (roomCode) setRoomCode(roomCode);
+
+      const currentLobbyPlayer = useLobbyStore.getState().currentPlayerId;
+      if (currentLobbyPlayer) setCurrentPlayer(currentLobbyPlayer);
+
       lobbyPlayers.forEach((p) => {
         addPlayer({
           id: p.id,
@@ -37,14 +79,191 @@ export default function CAHGameWrapper() {
         });
       });
     }
-  }, [lobbyPlayers, phase, cahPlayers.length, addPlayer]);
+  }, [lobbyPlayers, cahPlayers.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer]);
 
-  // Auto-start game once players are added
+  // HOST: start game only AFTER the sync channel is confirmed connected
   useEffect(() => {
-    if (phase === 'lobby' && cahPlayers.length >= 3) {
+    if (isHost && isReady && !gameStarted.current && cahPlayers.length >= 3 && phase === 'lobby') {
+      gameStarted.current = true;
       startGame();
     }
-  }, [phase, cahPlayers.length, startGame]);
+  }, [isHost, isReady, cahPlayers.length, phase, startGame]);
+
+  // HOST: after startGame / startRound, broadcast round start + deal cards to non-host players
+  useEffect(() => {
+    if (!isHost) return;
+    if (phase === 'playing' && prevPhaseRef.current !== 'playing') {
+      // Small delay to let store settle
+      const t = setTimeout(() => {
+        const state = useCAHStore.getState();
+
+        // Broadcast round start
+        broadcastRoundStart();
+
+        // Deal cards to each non-host player
+        state.players.forEach(p => {
+          if (!p.isHost) {
+            broadcastDealCards(p.id, p.hand);
+          }
+        });
+      }, 100);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // Track previous phase
+  useEffect(() => {
+    prevPhaseRef.current = phase;
+  }, [phase]);
+
+  // HOST: when store transitions to judging (all submitted), broadcast
+  useEffect(() => {
+    if (!isHost) return;
+
+    if (phase === 'judging' && prevPhaseRef.current === 'playing') {
+      const t = setTimeout(() => {
+        const state = useCAHStore.getState();
+        broadcastPhaseChange('judging', state.timeRemaining, state.submissions);
+      }, 50);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // HOST: when winner is selected (phase becomes 'reveal'), broadcast winner
+  useEffect(() => {
+    if (!isHost) return;
+
+    if (phase === 'reveal' && prevPhaseRef.current === 'judging') {
+      const t = setTimeout(() => {
+        const state = useCAHStore.getState();
+        const winnerSubmission = state.submissions.find(s => s.isWinner);
+        if (winnerSubmission) {
+          broadcastWinner(winnerSubmission.playerId);
+        }
+      }, 50);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // HOST: during reveal phase, auto-advance to next round after 5 seconds
+  useEffect(() => {
+    if (!isHost || phase !== 'reveal') return;
+
+    const t = setTimeout(() => {
+      const state = useCAHStore.getState();
+      if (state.currentRound >= state.maxRounds) {
+        useCAHStore.setState({ phase: 'game-over' });
+        broadcastGameOver();
+      } else {
+        nextRound();
+      }
+    }, 5000);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // HOST: when game-over, broadcast
+  useEffect(() => {
+    if (!isHost || phase !== 'game-over') return;
+    if (prevPhaseRef.current !== 'game-over') {
+      broadcastGameOver();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // HOST ONLY: run the game timer
+  useEffect(() => {
+    if (!isHost) return;
+    if (phase === 'playing' || phase === 'judging') {
+      timerRef.current = setInterval(() => {
+        const state = useCAHStore.getState();
+
+        if (state.timeRemaining <= 1) {
+          // Timer expired
+          if (state.phase === 'playing') {
+            // Force transition to judging with whatever submissions exist
+            if (state.submissions.length > 0) {
+              useCAHStore.setState({
+                phase: 'judging',
+                timeRemaining: state.judgeTime,
+                submissions: shuffleArray(state.submissions),
+              });
+            } else {
+              // No submissions at all — skip to next round
+              nextRound();
+            }
+          } else if (state.phase === 'judging') {
+            // Auto-pick random winner
+            if (state.submissions.length > 0) {
+              const randomIdx = Math.floor(Math.random() * state.submissions.length);
+              selectWinner(state.submissions[randomIdx].playerId);
+            }
+          }
+          return;
+        }
+
+        decrementTime();
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isHost]);
+
+  // HOST: sync timer to non-host clients every 2 seconds
+  useEffect(() => {
+    if (!isHost || (phase !== 'playing' && phase !== 'judging')) {
+      if (timerSyncRef.current) clearInterval(timerSyncRef.current);
+      return;
+    }
+    timerSyncRef.current = setInterval(() => broadcastTimerSync(), 2000);
+    return () => {
+      if (timerSyncRef.current) clearInterval(timerSyncRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, phase]);
+
+  // HOST: broadcast submission count when submissions change
+  useEffect(() => {
+    if (!isHost || phase !== 'playing') return;
+    broadcastSubmissionCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submissions.length, isHost, phase]);
+
+  // --- Handlers for child components ---
+
+  // Submit cards (called from CAHPlaying)
+  const handleSubmitCards = (cardIds: string[]) => {
+    if (isHost) {
+      // Host submits locally
+      submitCards(currentPlayerId!);
+    } else {
+      // Non-host broadcasts to host
+      broadcastSubmitCards(cardIds);
+      // Also mark locally as submitted for immediate UI feedback
+      useCAHStore.setState({
+        players: cahPlayers.map(p =>
+          p.id === currentPlayerId ? { ...p, hasSubmitted: true } : p
+        ),
+      });
+    }
+  };
+
+  // Pick winner (called from CAHJudging)
+  const handlePickWinner = (winnerId: string) => {
+    if (isHost) {
+      // Host picks locally
+      selectWinner(winnerId);
+    } else {
+      // Non-host czar broadcasts to host
+      broadcastPickWinner(winnerId);
+    }
+  };
 
   const handlePlayAgain = () => {
     resetGame();
@@ -68,14 +287,29 @@ export default function CAHGameWrapper() {
         </div>
       );
     case 'playing':
-      return <CAHPlaying />;
+      return (
+        <CAHPlaying
+          onSubmitCards={handleSubmitCards}
+          isHost={isHost}
+        />
+      );
     case 'judging':
-      return <CAHJudging />;
+      return (
+        <CAHJudging
+          onPickWinner={handlePickWinner}
+          isHost={isHost}
+        />
+      );
     case 'reveal':
       return <CAHReveal />;
     case 'game-over':
       return <CAHGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />;
     default:
-      return <CAHPlaying />;
+      return (
+        <CAHPlaying
+          onSubmitCards={handleSubmitCards}
+          isHost={isHost}
+        />
+      );
   }
 }
