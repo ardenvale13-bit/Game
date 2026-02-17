@@ -1,5 +1,5 @@
 // Home Page - Simple create/join
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLobbyStore from '../store/lobbyStore';
 
@@ -45,9 +45,9 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Play entrance sound effect (synthesized whoosh + sparkle)
-  useEffect(() => {
-    if (!entered || audioPlayed.current) return;
+  // Sound effect helper
+  const playEntranceSound = useCallback(() => {
+    if (audioPlayed.current) return;
     audioPlayed.current = true;
 
     try {
@@ -85,7 +85,35 @@ export default function Home() {
     } catch {
       // Audio not available, no big deal
     }
-  }, [entered]);
+  }, []);
+
+  // Try playing sound on entrance (works if returning from lobby)
+  // Also listen for first user interaction to play on cold opens
+  useEffect(() => {
+    if (!entered) return;
+
+    // Try immediately — works if there's been prior interaction
+    playEntranceSound();
+
+    // Fallback: play on first click/tap/keypress for cold opens
+    if (!audioPlayed.current) {
+      const handler = () => {
+        playEntranceSound();
+        window.removeEventListener('click', handler);
+        window.removeEventListener('touchstart', handler);
+        window.removeEventListener('keydown', handler);
+      };
+      window.addEventListener('click', handler);
+      window.addEventListener('touchstart', handler);
+      window.addEventListener('keydown', handler);
+
+      return () => {
+        window.removeEventListener('click', handler);
+        window.removeEventListener('touchstart', handler);
+        window.removeEventListener('keydown', handler);
+      };
+    }
+  }, [entered, playEntranceSound]);
 
   return (
     <div className="home-layout">
@@ -94,6 +122,13 @@ export default function Home() {
           {sparkles.map((s) => (
             <Sparkle key={s.id} delay={s.delay} x={s.x} y={s.y} size={s.size} />
           ))}
+        </div>
+        <div className="home-logo">
+          <img
+            src="/controller.png"
+            alt="Controller"
+            className="home-controller-img"
+          />
         </div>
         <img
           src="/game-time.png"

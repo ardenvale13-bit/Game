@@ -632,7 +632,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
               title="Pencil"
               style={{ padding: '6px' }}
             >
-              <img src="/pencil.png" alt="Pencil" style={{ width: '24px', height: '24px' }} />
+              <img src="/pencil.png" alt="Pencil" style={{ width: '48px', height: '48px' }} />
             </button>
             <button
               className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
@@ -640,7 +640,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
               title="Eraser"
               style={{ padding: '6px' }}
             >
-              <img src="/eraser.png" alt="Eraser" style={{ width: '24px', height: '24px' }} />
+              <img src="/eraser.png" alt="Eraser" style={{ width: '48px', height: '48px' }} />
             </button>
             <button
               className={`tool-btn ${tool === 'fill' ? 'active' : ''}`}
@@ -648,7 +648,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
               title="Fill"
               style={{ padding: '6px' }}
             >
-              <img src="/bucket.png" alt="Fill" style={{ width: '24px', height: '24px' }} />
+              <img src="/bucket.png" alt="Fill" style={{ width: '48px', height: '48px' }} />
             </button>
           </div>
 
