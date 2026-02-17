@@ -1,10 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import useGameStore from '../store/gameStore';
+import type { ChatMessage } from '../store/gameStore';
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  isHost?: boolean;
+  broadcastGuess?: (playerName: string, guess: string) => void;
+  broadcastChatMessage?: (msg: ChatMessage) => void;
+  broadcastGameState?: () => void;
+}
+
+export default function ChatPanel({
+  isHost = false,
+  broadcastGuess,
+  broadcastChatMessage,
+  broadcastGameState,
+}: ChatPanelProps) {
   const [guess, setGuess] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     messages,
     currentPlayerId,
@@ -28,7 +41,24 @@ export default function ChatPanel() {
     e.preventDefault();
     if (!guess.trim() || !canGuess || !currentPlayer) return;
 
-    submitGuess(currentPlayerId!, currentPlayer.name, guess.trim());
+    if (isHost) {
+      // Host validates guesses locally
+      const result = submitGuess(currentPlayerId!, currentPlayer.name, guess.trim());
+      // Broadcast the resulting message to other clients
+      const msgs = useGameStore.getState().messages;
+      const latest = msgs[msgs.length - 1];
+      if (latest && broadcastChatMessage) {
+        broadcastChatMessage(latest);
+      }
+      // If correct, broadcast updated game state (scores)
+      if (result && broadcastGameState) {
+        broadcastGameState();
+      }
+    } else if (broadcastGuess) {
+      // Non-host sends guess to host for validation
+      broadcastGuess(currentPlayer.name, guess.trim());
+    }
+
     setGuess('');
   };
 
@@ -42,8 +72,8 @@ export default function ChatPanel() {
   return (
     <div className="chat-container">
       {/* Header */}
-      <div style={{ 
-        padding: '12px 16px', 
+      <div style={{
+        padding: '12px 16px',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         fontWeight: 600,
       }}>
@@ -53,8 +83,8 @@ export default function ChatPanel() {
       {/* Messages */}
       <div className="chat-messages">
         {messages.length === 0 ? (
-          <div className="text-muted text-center" style={{ 
-            marginTop: 'auto', 
+          <div className="text-muted text-center" style={{
+            marginTop: 'auto',
             marginBottom: 'auto',
             fontSize: '0.9rem',
           }}>
@@ -62,8 +92,8 @@ export default function ChatPanel() {
           </div>
         ) : (
           messages.map((msg) => (
-            <div 
-              key={msg.id} 
+            <div
+              key={msg.id}
               className={`chat-message ${msg.isCorrectGuess ? 'correct' : ''} ${msg.isSystemMessage ? 'system' : ''}`}
             >
               {!msg.isSystemMessage && (

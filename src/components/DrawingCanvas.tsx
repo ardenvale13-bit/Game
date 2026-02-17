@@ -1,11 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import useGameStore from '../store/gameStore';
+import type { DrawCommand } from '../store/gameStore';
 
 const BRUSH_SIZES = [2, 5, 10, 18, 28, 40];
 
-// Quick color presets (in addition to the hex picker)
 const COLOR_PRESETS = [
-  '#000000', '#FFFFFF', '#EF4444', '#F97316', '#EAB308', 
+  '#000000', '#FFFFFF', '#EF4444', '#F97316', '#EAB308',
   '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#78716C',
 ];
 
@@ -13,7 +13,12 @@ interface CanvasState {
   imageData: ImageData | null;
 }
 
-export default function DrawingCanvas() {
+interface DrawingCanvasProps {
+  onDrawBroadcast?: (cmd: DrawCommand) => void;
+  onClearBroadcast?: () => void;
+}
+
+export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -21,7 +26,11 @@ export default function DrawingCanvas() {
   const [brushSize, setBrushSize] = useState(10);
   const [tool, setTool] = useState<'brush' | 'eraser' | 'fill'>('brush');
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
-  
+
+  // Replay state for non-drawers
+  const replayLastPosRef = useRef<{ x: number; y: number } | null>(null);
+  const lastRenderedRef = useRef(0);
+
   // Undo/Redo stacks
   const [undoStack, setUndoStack] = useState<CanvasState[]>([]);
   const [redoStack, setRedoStack] = useState<CanvasState[]>([]);
@@ -29,6 +38,7 @@ export default function DrawingCanvas() {
 
   const {
     phase,
+    drawCommands,
     addDrawCommand,
     clearCanvas,
     isCurrentPlayerDrawing,
@@ -36,16 +46,99 @@ export default function DrawingCanvas() {
 
   const canDraw = isCurrentPlayerDrawing() && phase === 'drawing';
 
+  // Get canvas display dimensions
+  const getCanvasRect = () => containerRef.current?.getBoundingClientRect() || null;
+
+  // Clear canvas and reset replay on new round
+  useEffect(() => {
+    if (phase === 'word-selection') {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (canvas && container) {
+        const ctx = canvas.getContext('2d');
+        const rect = container.getBoundingClientRect();
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, rect.width, rect.height);
+        }
+      }
+      lastRenderedRef.current = 0;
+      replayLastPosRef.current = null;
+      // Clear the store draw commands for non-host
+      useGameStore.setState({ drawCommands: [] });
+    }
+  }, [phase]);
+
+  // --- REPLAY: render incoming draw commands for non-drawers ---
+  useEffect(() => {
+    if (canDraw) return; // Drawer draws directly, skip replay
+
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    if (drawCommands.length <= lastRenderedRef.current) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = container.getBoundingClientRect();
+
+    for (let i = lastRenderedRef.current; i < drawCommands.length; i++) {
+      const cmd = drawCommands[i];
+
+      if (cmd.type === 'clear') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        replayLastPosRef.current = null;
+      } else if (cmd.type === 'start') {
+        if (cmd.size === 0 && cmd.color) {
+          // Fill command — denormalize coords
+          floodFill((cmd.x ?? 0) * rect.width, (cmd.y ?? 0) * rect.height, cmd.color);
+        } else {
+          // Start a stroke — denormalize coords
+          const x = (cmd.x ?? 0) * rect.width;
+          const y = (cmd.y ?? 0) * rect.height;
+          replayLastPosRef.current = { x, y };
+
+          ctx.strokeStyle = cmd.color || '#000000';
+          ctx.lineWidth = cmd.size || 10;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+
+          // Draw dot at start
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+      } else if (cmd.type === 'draw') {
+        if (replayLastPosRef.current) {
+          const x = (cmd.x ?? 0) * rect.width;
+          const y = (cmd.y ?? 0) * rect.height;
+          ctx.beginPath();
+          ctx.moveTo(replayLastPosRef.current.x, replayLastPosRef.current.y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          replayLastPosRef.current = { x, y };
+        }
+      } else if (cmd.type === 'end') {
+        replayLastPosRef.current = null;
+      }
+    }
+
+    lastRenderedRef.current = drawCommands.length;
+  }, [drawCommands.length, canDraw]);
+
   // Save current canvas state to undo stack
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
+
     setUndoStack(prev => {
       const newStack = [...prev, { imageData }];
       if (newStack.length > maxHistorySize) {
@@ -53,27 +146,27 @@ export default function DrawingCanvas() {
       }
       return newStack;
     });
-    
+
     setRedoStack([]);
   }, []);
 
   // Undo function
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0 || !canDraw) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     setRedoStack(prev => [...prev, { imageData: currentImageData }]);
-    
+
     const newUndoStack = [...undoStack];
     const previousState = newUndoStack.pop();
     setUndoStack(newUndoStack);
-    
+
     if (previousState?.imageData) {
       ctx.putImageData(previousState.imageData, 0, 0);
     } else {
@@ -85,20 +178,20 @@ export default function DrawingCanvas() {
   // Redo function
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0 || !canDraw) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     setUndoStack(prev => [...prev, { imageData: currentImageData }]);
-    
+
     const newRedoStack = [...redoStack];
     const nextState = newRedoStack.pop();
     setRedoStack(newRedoStack);
-    
+
     if (nextState?.imageData) {
       ctx.putImageData(nextState.imageData, 0, 0);
     }
@@ -108,7 +201,7 @@ export default function DrawingCanvas() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!canDraw) return;
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -122,7 +215,7 @@ export default function DrawingCanvas() {
         handleRedo();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canDraw, handleUndo, handleRedo]);
@@ -136,27 +229,27 @@ export default function DrawingCanvas() {
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      
+
       const ctx = canvas.getContext('2d');
       let savedImage: ImageData | null = null;
       if (ctx && canvas.width > 0 && canvas.height > 0) {
         savedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
-      
+
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
-      
+
       const newCtx = canvas.getContext('2d');
       if (newCtx) {
         newCtx.scale(dpr, dpr);
         newCtx.lineCap = 'round';
         newCtx.lineJoin = 'round';
-        
+
         newCtx.fillStyle = '#FFFFFF';
         newCtx.fillRect(0, 0, rect.width, rect.height);
-        
+
         if (savedImage) {
           newCtx.putImageData(savedImage, 0, 0);
         }
@@ -195,14 +288,14 @@ export default function DrawingCanvas() {
   const floodFill = (startX: number, startY: number, fillColor: string) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
     const x = Math.floor(startX * dpr);
     const y = Math.floor(startY * dpr);
-    
+
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const width = canvas.width;
@@ -244,13 +337,13 @@ export default function DrawingCanvas() {
     while (stack.length > 0) {
       const [cx, cy] = stack.pop()!;
       const key = `${cx},${cy}`;
-      
+
       if (visited.has(key)) continue;
       if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
-      
+
       const idx = (cy * width + cx) * 4;
       if (!colorMatch(idx)) continue;
-      
+
       visited.add(key);
       setPixel(idx);
 
@@ -263,19 +356,19 @@ export default function DrawingCanvas() {
     ctx.putImageData(imageData, 0, 0);
   };
 
-  // Draw on canvas
+  // Draw on canvas (local drawing for the drawer)
   const draw = (from: { x: number; y: number }, to: { x: number; y: number }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.strokeStyle = tool === 'eraser' ? '#FFFFFF' : currentColor;
     ctx.lineWidth = tool === 'eraser' ? brushSize * 2 : brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
+
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
@@ -290,9 +383,11 @@ export default function DrawingCanvas() {
     const pos = getPosition(e);
     if (!pos) return;
 
+    const rect = getCanvasRect();
+
     saveToHistory();
 
-    // Fill tool - just fill and return
+    // Fill tool
     if (tool === 'fill') {
       floodFill(pos.x, pos.y, currentColor);
       addDrawCommand({
@@ -300,8 +395,18 @@ export default function DrawingCanvas() {
         x: pos.x,
         y: pos.y,
         color: currentColor,
-        size: 0, // Indicates fill
+        size: 0,
       });
+      // Broadcast normalized fill command
+      if (onDrawBroadcast && rect) {
+        onDrawBroadcast({
+          type: 'start',
+          x: pos.x / rect.width,
+          y: pos.y / rect.height,
+          color: currentColor,
+          size: 0,
+        });
+      }
       return;
     }
 
@@ -309,13 +414,27 @@ export default function DrawingCanvas() {
     lastPosRef.current = pos;
     draw(pos, pos);
 
+    const color = tool === 'eraser' ? '#FFFFFF' : currentColor;
+    const size = tool === 'eraser' ? brushSize * 2 : brushSize;
+
     addDrawCommand({
       type: 'start',
       x: pos.x,
       y: pos.y,
-      color: tool === 'eraser' ? '#FFFFFF' : currentColor,
-      size: tool === 'eraser' ? brushSize * 2 : brushSize,
+      color,
+      size,
     });
+
+    // Broadcast normalized
+    if (onDrawBroadcast && rect) {
+      onDrawBroadcast({
+        type: 'start',
+        x: pos.x / rect.width,
+        y: pos.y / rect.height,
+        color,
+        size,
+      });
+    }
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -325,6 +444,8 @@ export default function DrawingCanvas() {
     const pos = getPosition(e);
     if (!pos) return;
 
+    const rect = getCanvasRect();
+
     draw(lastPosRef.current, pos);
 
     addDrawCommand({
@@ -332,6 +453,15 @@ export default function DrawingCanvas() {
       x: pos.x,
       y: pos.y,
     });
+
+    // Broadcast normalized
+    if (onDrawBroadcast && rect) {
+      onDrawBroadcast({
+        type: 'draw',
+        x: pos.x / rect.width,
+        y: pos.y / rect.height,
+      });
+    }
 
     lastPosRef.current = pos;
   };
@@ -341,41 +471,43 @@ export default function DrawingCanvas() {
     setIsDrawing(false);
     lastPosRef.current = null;
     addDrawCommand({ type: 'end' });
+    onDrawBroadcast?.({ type: 'end' });
   };
 
   const handleClear = () => {
     if (!canDraw) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     saveToHistory();
-    
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, rect.width, rect.height);
     }
-    
+
     clearCanvas();
+    onClearBroadcast?.();
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
       {/* Canvas */}
-      <div 
+      <div
         ref={containerRef}
         className="canvas-container"
-        style={{ 
-          flex: 1, 
+        style={{
+          flex: 1,
           minHeight: '400px',
-          cursor: canDraw 
-            ? tool === 'eraser' ? 'cell' 
-            : tool === 'fill' ? 'pointer' 
-            : 'crosshair' 
+          cursor: canDraw
+            ? tool === 'eraser' ? 'cell'
+            : tool === 'fill' ? 'pointer'
+            : 'crosshair'
             : 'default',
         }}
       >
@@ -438,7 +570,7 @@ export default function DrawingCanvas() {
 
           <div style={{ width: '1px', height: '32px', background: 'rgba(0, 240, 255, 0.2)' }} />
 
-          {/* Tool selection - custom icons */}
+          {/* Tool selection */}
           <div style={{ display: 'flex', gap: '4px' }}>
             <button
               className={`tool-btn ${tool === 'brush' ? 'active' : ''}`}
@@ -470,8 +602,8 @@ export default function DrawingCanvas() {
 
           {/* Color picker */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label 
-              style={{ 
+            <label
+              style={{
                 position: 'relative',
                 width: '42px',
                 height: '42px',
@@ -499,40 +631,40 @@ export default function DrawingCanvas() {
                   border: 'none',
                 }}
               />
-              <div 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
                   background: currentColor,
                   pointerEvents: 'none',
-                }} 
+                }}
               />
             </label>
-            
+
             {/* Quick color presets */}
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '200px' }}>
               {COLOR_PRESETS.map((color) => (
                 <button
                   key={color}
-                  style={{ 
-                    backgroundColor: color, 
-                    border: currentColor === color && tool === 'brush' 
-                      ? '3px solid white' 
-                      : color === '#FFFFFF' 
-                        ? '2px solid #444' 
+                  style={{
+                    backgroundColor: color,
+                    border: currentColor === color && tool === 'brush'
+                      ? '3px solid white'
+                      : color === '#FFFFFF'
+                        ? '2px solid #444'
                         : '2px solid transparent',
                     width: '26px',
                     height: '26px',
                     borderRadius: '50%',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    boxShadow: currentColor === color && tool === 'brush' 
-                      ? '0 0 8px rgba(255,255,255,0.6)' 
+                    boxShadow: currentColor === color && tool === 'brush'
+                      ? '0 0 8px rgba(255,255,255,0.6)'
                       : 'none',
                   }}
-                  onClick={() => { 
-                    setCurrentColor(color); 
-                    setTool('brush'); 
+                  onClick={() => {
+                    setCurrentColor(color);
+                    setTool('brush');
                   }}
                   title={color}
                 />
@@ -542,15 +674,15 @@ export default function DrawingCanvas() {
 
           <div style={{ width: '1px', height: '32px', background: 'rgba(0, 240, 255, 0.2)' }} />
 
-          {/* Brush sizes - dots */}
+          {/* Brush sizes */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {BRUSH_SIZES.map((size) => (
               <button
                 key={size}
                 className={`tool-btn ${brushSize === size ? 'active' : ''}`}
-                style={{ 
-                  width: '36px', 
-                  height: '36px', 
+                style={{
+                  width: '36px',
+                  height: '36px',
                   padding: 0,
                   display: 'flex',
                   alignItems: 'center',
@@ -559,13 +691,13 @@ export default function DrawingCanvas() {
                 onClick={() => setBrushSize(size)}
                 title={`${size}px`}
               >
-                <div 
-                  style={{ 
-                    width: `${Math.min(size, 24)}px`, 
-                    height: `${Math.min(size, 24)}px`, 
+                <div
+                  style={{
+                    width: `${Math.min(size, 24)}px`,
+                    height: `${Math.min(size, 24)}px`,
                     borderRadius: '50%',
                     backgroundColor: brushSize === size ? 'var(--accent-primary)' : 'var(--text-primary)',
-                  }} 
+                  }}
                 />
               </button>
             ))}
@@ -573,7 +705,7 @@ export default function DrawingCanvas() {
 
           <div style={{ width: '1px', height: '32px', background: 'rgba(0, 240, 255, 0.2)' }} />
 
-          {/* Clear button - trash icon */}
+          {/* Clear button */}
           <button
             className="tool-btn"
             onClick={handleClear}

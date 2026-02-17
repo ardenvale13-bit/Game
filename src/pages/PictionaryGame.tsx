@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useGameStore from '../store/gameStore';
 import useLobbyStore from '../store/lobbyStore';
+import { usePictionarySync } from '../hooks/usePictionarySync';
 import DrawingCanvas from '../components/DrawingCanvas';
 import WordSelection from '../components/WordSelection';
 import ChatPanel from '../components/ChatPanel';
@@ -12,11 +13,12 @@ export default function PictionaryGame() {
   const navigate = useNavigate();
   const { roomCode } = useParams();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialized = useRef(false);
-  
+
   const lobbyPlayers = useLobbyStore((state) => state.players);
   const endLobbyGame = useLobbyStore((state) => state.endGame);
-  
+
   const {
     phase,
     players,
@@ -38,18 +40,37 @@ export default function PictionaryGame() {
     startWordSelection,
   } = useGameStore();
 
-  // Initialize game with lobby players
+  const currentDrawer = getCurrentDrawer();
+  const isDrawing = isCurrentPlayerDrawing();
+  const currentPlayer = players.find(p => p.id === currentPlayerId);
+  const isHost = currentPlayer?.isHost ?? false;
+
+  // --- Multiplayer sync ---
+  const {
+    broadcastGameState,
+    broadcastDraw,
+    broadcastClearCanvas,
+    broadcastGuess,
+    broadcastWordOptions,
+    broadcastWordSelection,
+    broadcastRoundEnd,
+    broadcastChatMessage,
+  } = usePictionarySync({
+    roomCode: roomCode || null,
+    playerId: currentPlayerId,
+    isHost,
+  });
+
+  // Initialize game with lobby players (all clients)
   useEffect(() => {
     if (!initialized.current && lobbyPlayers.length > 0 && players.length === 0) {
       initialized.current = true;
-      
-      // Set room code
+
       if (roomCode) setRoomCode(roomCode);
-      
-      // Add players from lobby
+
       const currentLobbyPlayer = useLobbyStore.getState().currentPlayerId;
       if (currentLobbyPlayer) setCurrentPlayer(currentLobbyPlayer);
-      
+
       lobbyPlayers.forEach((p, idx) => {
         addPlayer({
           id: p.id,
@@ -62,53 +83,73 @@ export default function PictionaryGame() {
           },
           score: 0,
           isHost: p.isHost,
-          isDrawing: idx === 0, // First player starts drawing
+          isDrawing: idx === 0,
           hasGuessedCorrectly: false,
           joinedAt: Date.now(),
         });
       });
-      
-      // Start the game
-      setTimeout(() => {
-        startWordSelection();
-      }, 100);
+
+      // Only HOST starts game logic
+      const meIsHost = lobbyPlayers.find(p => p.id === currentLobbyPlayer)?.isHost;
+      if (meIsHost) {
+        setTimeout(() => startWordSelection(), 100);
+      }
     }
   }, [lobbyPlayers, players.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer, startWordSelection]);
 
-  const currentDrawer = getCurrentDrawer();
-  const isDrawing = isCurrentPlayerDrawing();
-  const currentPlayer = players.find(p => p.id === currentPlayerId);
-  const isHost = currentPlayer?.isHost ?? false;
-
-  // Timer effect
+  // HOST: broadcast game state after every phase change
   useEffect(() => {
-    if (phase === 'word-selection' || phase === 'drawing') {
-      timerRef.current = setInterval(() => {
-        decrementTime();
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+    if (!isHost) return;
+    const t = setTimeout(() => {
+      broadcastGameState();
+      // If word selection started and drawer is non-host, send word options
+      if (phase === 'word-selection') {
+        const s = useGameStore.getState();
+        const drawer = s.players[s.currentDrawerIndex];
+        if (drawer && !drawer.isHost) {
+          broadcastWordOptions(drawer.id, s.wordOptions);
+        }
       }
-    };
-  }, [phase, decrementTime]);
+    }, 50);
+    return () => clearTimeout(t);
+  }, [phase, currentRound, isHost, broadcastGameState, broadcastWordOptions]);
 
-  // Handle round end transition
+  // HOST ONLY: run the game timer
   useEffect(() => {
-    if (phase === 'round-end') {
-      const timeout = setTimeout(() => {
-        nextRound();
-      }, 4000); // Show results for 4 seconds
-
-      return () => clearTimeout(timeout);
+    if (!isHost) return;
+    if (phase === 'word-selection' || phase === 'drawing') {
+      timerRef.current = setInterval(() => decrementTime(), 1000);
     }
-  }, [phase, nextRound]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [phase, decrementTime, isHost]);
+
+  // HOST: sync timer to non-host clients periodically
+  useEffect(() => {
+    if (!isHost || (phase !== 'drawing' && phase !== 'word-selection')) {
+      if (timerSyncRef.current) clearInterval(timerSyncRef.current);
+      return;
+    }
+    timerSyncRef.current = setInterval(() => broadcastGameState(), 2000);
+    return () => {
+      if (timerSyncRef.current) clearInterval(timerSyncRef.current);
+    };
+  }, [isHost, phase, broadcastGameState]);
+
+  // HOST: handle round end → wait → next round
+  useEffect(() => {
+    if (phase === 'round-end' && isHost) {
+      const word = useGameStore.getState().currentWord;
+      if (word) broadcastRoundEnd(word);
+      const t = setTimeout(() => nextRound(), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [phase, nextRound, isHost, broadcastRoundEnd]);
 
   const handlePlayAgain = () => {
     resetGame();
-    endLobbyGame(); // Return to lobby
+    endLobbyGame();
     navigate(`/lobby/${roomCode}`);
   };
 
@@ -118,14 +159,12 @@ export default function PictionaryGame() {
     navigate(`/lobby/${roomCode}`);
   };
 
-  // Get timer class for styling
   const getTimerClass = () => {
     if (timeRemaining <= 10) return 'timer danger';
     if (timeRemaining <= 20) return 'timer warning';
     return 'timer';
   };
 
-  // Format time display
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -156,7 +195,7 @@ export default function PictionaryGame() {
         </div>
 
         {isHost && (
-          <button 
+          <button
             className="btn btn-secondary w-full"
             onClick={endGame}
             style={{ marginTop: '8px', fontSize: '0.85rem' }}
@@ -180,8 +219,8 @@ export default function PictionaryGame() {
               {phase === 'drawing' && (
                 <>
                   {isDrawing ? (
-                    <span style={{ 
-                      fontSize: '1.2rem', 
+                    <span style={{
+                      fontSize: '1.2rem',
                       fontWeight: 700,
                       color: 'var(--accent-primary)'
                     }}>
@@ -193,8 +232,8 @@ export default function PictionaryGame() {
                 </>
               )}
               {phase === 'round-end' && (
-                <span style={{ 
-                  fontSize: '1.2rem', 
+                <span style={{
+                  fontSize: '1.2rem',
                   fontWeight: 700,
                   color: 'var(--accent-success)'
                 }}>
@@ -202,7 +241,7 @@ export default function PictionaryGame() {
                 </span>
               )}
             </div>
-            
+
             <div className={getTimerClass()}>
               {formatTime(timeRemaining)}
             </div>
@@ -211,15 +250,25 @@ export default function PictionaryGame() {
 
         {/* Canvas or Word Selection */}
         {phase === 'word-selection' && isDrawing ? (
-          <WordSelection />
+          <WordSelection
+            onSelectWord={isHost ? undefined : broadcastWordSelection}
+          />
         ) : (
-          <DrawingCanvas />
+          <DrawingCanvas
+            onDrawBroadcast={isDrawing ? broadcastDraw : undefined}
+            onClearBroadcast={isDrawing ? broadcastClearCanvas : undefined}
+          />
         )}
       </div>
 
       {/* Right Sidebar - Chat */}
       <div className="sidebar-right">
-        <ChatPanel />
+        <ChatPanel
+          isHost={isHost}
+          broadcastGuess={!isHost ? broadcastGuess : undefined}
+          broadcastChatMessage={isHost ? broadcastChatMessage : undefined}
+          broadcastGameState={isHost ? broadcastGameState : undefined}
+        />
       </div>
     </div>
   );

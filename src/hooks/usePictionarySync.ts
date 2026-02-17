@@ -112,14 +112,14 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
       // Guess result
       channel.on('broadcast', { event: 'guess_result' }, ({ payload }) => {
         if (!payload) return;
-        const { playerId: guesserId, isCorrect, points } = payload as {
+        const { playerId: guesserId, isCorrect, score } = payload as {
           playerId: string;
           isCorrect: boolean;
-          points: number;
+          score: number;
         };
         if (isCorrect) {
           store.getState().updatePlayer(guesserId, {
-            score: (store.getState().players.find(p => p.id === guesserId)?.score || 0) + points,
+            score: score, // absolute score from host
             hasGuessedCorrectly: true,
           });
         }
@@ -156,7 +156,7 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
             payload: {
               playerId: senderId,
               isCorrect: true,
-              points: player?.score || 0,
+              score: player?.score || 0, // absolute total score
             },
           });
         }
@@ -254,7 +254,7 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
   }, [playerId]);
 
   // Broadcast word options to drawer
-  const broadcastWordOptions = useCallback((targetPlayerId: string, words: Array<{ text: string; difficulty?: number }>) => {
+  const broadcastWordOptions = useCallback((targetPlayerId: string, words: Array<{ text: string; difficulty: 'easy' | 'medium' | 'hard' }>) => {
     const channel = channelRef.current;
     if (!channel || !isHost) return;
     channel.send({

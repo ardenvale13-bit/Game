@@ -1,7 +1,21 @@
 import useGameStore from '../store/gameStore';
 
-export default function WordSelection() {
+interface WordSelectionProps {
+  onSelectWord?: (word: string) => void;
+}
+
+export default function WordSelection({ onSelectWord }: WordSelectionProps) {
   const { wordOptions, selectWord, timeRemaining } = useGameStore();
+
+  const handleSelect = (word: string) => {
+    if (onSelectWord) {
+      // Non-host drawer: broadcast selection to host
+      onSelectWord(word);
+    } else {
+      // Host drawer: select locally
+      selectWord(word);
+    }
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -22,11 +36,11 @@ export default function WordSelection() {
   };
 
   return (
-    <div className="card" style={{ 
-      flex: 1, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
+    <div className="card" style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       justifyContent: 'center',
       minHeight: '400px',
     }}>
@@ -41,12 +55,12 @@ export default function WordSelection() {
           <button
             key={index}
             className="word-option"
-            onClick={() => selectWord(wordObj.text)}
+            onClick={() => handleSelect(wordObj.text)}
             style={{ position: 'relative' }}
           >
-            <span style={{ 
-              position: 'absolute', 
-              top: '6px', 
+            <span style={{
+              position: 'absolute',
+              top: '6px',
               right: '8px',
               fontSize: '0.7rem',
               color: getDifficultyColor(wordObj.difficulty),
