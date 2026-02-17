@@ -278,9 +278,9 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const nextDrawerIndex = (state.currentDrawerIndex + 1) % state.players.length;
     const nextRound = state.currentRound + 1;
     
-    // Check if game should end
-    const totalRounds = state.settings.rounds || state.players.length;
-    if (nextRound >= totalRounds) {
+    // Check if game should end — rounds means each player draws that many times
+    const totalTurns = (state.settings.rounds || 1) * state.players.length;
+    if (nextRound >= totalTurns) {
       get().endGame();
       return;
     }

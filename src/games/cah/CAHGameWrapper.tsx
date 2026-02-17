@@ -146,6 +146,10 @@ export default function CAHGameWrapper() {
         broadcastGameOver();
       } else {
         nextRound();
+        // Explicitly broadcast after store settles with new czar
+        setTimeout(() => {
+          broadcastRoundStart();
+        }, 200);
       }
     }, 5000);
 
@@ -182,6 +186,7 @@ export default function CAHGameWrapper() {
             } else {
               // No submissions at all — skip to next round
               nextRound();
+              setTimeout(() => broadcastRoundStart(), 200);
             }
           } else if (state.phase === 'judging') {
             // Auto-pick random winner

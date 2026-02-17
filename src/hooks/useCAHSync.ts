@@ -35,9 +35,10 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
       // Round start — black card, czar, hands, etc. (single atomic broadcast)
       channel.on('broadcast', { event: 'cah_round_start' }, ({ payload }) => {
         if (!payload) return;
-        const { blackCard, czarIndex, round, phase, timeRemaining, playerHands } = payload as {
+        const { blackCard, czarIndex, czarPlayerId, round, phase, timeRemaining, playerHands } = payload as {
           blackCard: BlackCard;
           czarIndex: number;
+          czarPlayerId?: string;
           round: number;
           phase: CAHPhase;
           timeRemaining: number;
@@ -48,7 +49,8 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
           return {
             ...p,
             hand,
-            isCzar: idx === czarIndex,
+            // Use czarPlayerId (player ID) if available — immune to ordering differences
+            isCzar: czarPlayerId ? p.id === czarPlayerId : idx === czarIndex,
             selectedCards: [] as WhiteCard[],
             hasSubmitted: false,
           };
@@ -98,15 +100,17 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         store.setState({ timeRemaining });
       });
 
-      // Submission count update
+      // Submission count update — only update hasSubmitted flag, preserve everything else
       channel.on('broadcast', { event: 'cah_submission_count' }, ({ payload }) => {
         if (!payload) return;
         const { submittedIds } = payload as { submittedIds: string[] };
-        const players = store.getState().players.map(p => ({
-          ...p,
-          hasSubmitted: submittedIds.includes(p.id),
+        // Use a function updater to get the latest state and only touch hasSubmitted
+        store.setState((state) => ({
+          players: state.players.map(p => ({
+            ...p,
+            hasSubmitted: submittedIds.includes(p.id),
+          })),
         }));
-        store.setState({ players });
       });
 
       // Winner reveal
@@ -295,12 +299,14 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     state.players.forEach(p => {
       playerHands[p.id] = p.hand;
     });
+    const czarPlayer = state.players.find(p => p.isCzar);
     channel.send({
       type: 'broadcast',
       event: 'cah_round_start',
       payload: {
         blackCard: state.currentBlackCard,
         czarIndex: state.czarIndex,
+        czarPlayerId: czarPlayer?.id ?? null,
         round: state.currentRound,
         phase: state.phase,
         timeRemaining: state.timeRemaining,

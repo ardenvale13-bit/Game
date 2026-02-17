@@ -198,7 +198,7 @@ export default function PictionaryGame() {
             <span className="room-code-small">{roomCode}</span>
           </div>
           <div className="round-indicator">
-            Round {currentRound + 1} / {settings.rounds}
+            Round {Math.floor(currentRound / Math.max(players.length, 1)) + 1} / {settings.rounds}
           </div>
         </div>
 
