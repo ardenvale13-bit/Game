@@ -66,7 +66,6 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
     const img = new Image();
     img.onload = () => {
-      const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       // Reset transform to draw at pixel level then restore
       ctx.setTransform(1, 0, 0, 1, 0, 0);
