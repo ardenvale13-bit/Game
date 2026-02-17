@@ -47,6 +47,7 @@ export default function PictionaryGame() {
 
   // --- Multiplayer sync ---
   const {
+    isReady,
     broadcastGameState,
     broadcastDraw,
     broadcastClearCanvas,
@@ -88,14 +89,18 @@ export default function PictionaryGame() {
           joinedAt: Date.now(),
         });
       });
-
-      // Only HOST starts game logic
-      const meIsHost = lobbyPlayers.find(p => p.id === currentLobbyPlayer)?.isHost;
-      if (meIsHost) {
-        setTimeout(() => startWordSelection(), 100);
-      }
+      // Game start is handled below — waits for sync channel to be ready
     }
-  }, [lobbyPlayers, players.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer, startWordSelection]);
+  }, [lobbyPlayers, players.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer]);
+
+  // HOST: start game only AFTER the sync channel is confirmed connected
+  const gameStarted = useRef(false);
+  useEffect(() => {
+    if (isHost && isReady && !gameStarted.current && players.length > 0 && phase === 'lobby') {
+      gameStarted.current = true;
+      startWordSelection();
+    }
+  }, [isHost, isReady, players.length, phase, startWordSelection]);
 
   // HOST: broadcast game state after every phase change
   useEffect(() => {

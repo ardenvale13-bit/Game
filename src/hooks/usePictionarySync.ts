@@ -1,6 +1,6 @@
 // Pictionary Multiplayer Sync via Supabase Realtime
 // Host-authoritative: host runs game logic, broadcasts state to all clients
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useGameStore } from '../store/gameStore';
@@ -14,11 +14,14 @@ interface UsePictionarySyncOptions {
 
 export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionarySyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const store = useGameStore;
 
   // Subscribe to game channel
   useEffect(() => {
     if (!roomCode || !playerId) return;
+
+    setIsReady(false);
 
     const channel = supabase.channel(`game:pictionary:${roomCode}`, {
       config: {
@@ -59,20 +62,6 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
         };
 
         // Apply state updates
-        store.setState({
-          phase: state.phase,
-          currentRound: state.currentRound,
-          totalRounds: state.totalRounds,
-          currentDrawerIndex: state.currentDrawerIndex,
-          wordHint: state.wordHint,
-          timeRemaining: state.timeRemaining,
-          // Only set currentWord if this player is the drawer
-          currentWord: store.getState().players[state.currentDrawerIndex]?.id === playerId
-            ? state.currentWord
-            : null,
-        });
-
-        // Update player scores and states
         const currentPlayers = store.getState().players;
         const updatedPlayers = currentPlayers.map(p => {
           const synced = state.players.find(sp => sp.id === p.id);
@@ -86,7 +75,20 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
           }
           return p;
         });
-        store.setState({ players: updatedPlayers });
+
+        store.setState({
+          phase: state.phase,
+          currentRound: state.currentRound,
+          totalRounds: state.totalRounds,
+          currentDrawerIndex: state.currentDrawerIndex,
+          wordHint: state.wordHint,
+          timeRemaining: state.timeRemaining,
+          // Only set currentWord if this player is the drawer
+          currentWord: currentPlayers[state.currentDrawerIndex]?.id === playerId
+            ? state.currentWord
+            : null,
+          players: updatedPlayers,
+        });
       });
 
       // Word options for drawer
@@ -135,8 +137,9 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
       });
     }
 
-    // --- GUESS EVENTS (host listens for guesses from other players) ---
+    // --- HOST LISTENERS ---
     if (isHost) {
+      // Host validates guesses from other players
       channel.on('broadcast', { event: 'submit_guess' }, ({ payload }) => {
         if (!payload) return;
         const { senderId, playerName, guess } = payload as {
@@ -173,20 +176,77 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
         }
       });
 
-      // Host listens for word selection from drawer
+      // Host listens for word selection from non-host drawer
       channel.on('broadcast', { event: 'select_word' }, ({ payload }) => {
         if (!payload) return;
         const { word } = payload as { word: string };
         store.getState().selectWord(word);
       });
+
+      // Host responds to state requests from newly connected clients
+      channel.on('broadcast', { event: 'request_state' }, () => {
+        // Small delay to ensure store is current
+        setTimeout(() => {
+          const state = store.getState();
+          if (state.phase === 'lobby') return; // Game hasn't started yet
+
+          channel.send({
+            type: 'broadcast',
+            event: 'game_state',
+            payload: {
+              phase: state.phase,
+              currentRound: state.currentRound,
+              totalRounds: state.totalRounds,
+              currentDrawerIndex: state.currentDrawerIndex,
+              wordHint: state.wordHint,
+              timeRemaining: state.timeRemaining,
+              currentWord: state.currentWord,
+              players: state.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                score: p.score,
+                isDrawing: p.isDrawing,
+                hasGuessedCorrectly: p.hasGuessedCorrectly,
+              })),
+            },
+          });
+
+          // Also send word options if in word selection and drawer is non-host
+          if (state.phase === 'word-selection') {
+            const drawer = state.players[state.currentDrawerIndex];
+            if (drawer && !drawer.isHost && state.wordOptions.length > 0) {
+              channel.send({
+                type: 'broadcast',
+                event: 'word_options',
+                payload: { targetPlayerId: drawer.id, words: state.wordOptions },
+              });
+            }
+          }
+        }, 200);
+      });
     }
 
-    channel.subscribe();
-    channelRef.current = channel;
+    // Subscribe WITH callback — only set channel ref after confirmed connected
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channelRef.current = channel;
+        setIsReady(true);
+
+        // Non-host: request current game state in case we missed initial broadcasts
+        if (!isHost) {
+          channel.send({
+            type: 'broadcast',
+            event: 'request_state',
+            payload: {},
+          });
+        }
+      }
+    });
 
     return () => {
       channel.unsubscribe();
       channelRef.current = null;
+      setIsReady(false);
     };
   }, [roomCode, playerId, isHost]);
 
@@ -298,6 +358,7 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
   }, []);
 
   return {
+    isReady,
     broadcastGameState,
     broadcastDraw,
     broadcastClearCanvas,
