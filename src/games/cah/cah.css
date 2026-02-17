@@ -47,15 +47,15 @@
 
 .cah-black-card {
   background-image: url('/cah/prompt.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   color: #fff;
   border: none;
   border-radius: 16px;
   overflow: hidden;
-  padding: 28px 22px;
-  width: 300px;
-  min-height: 300px;
+  padding: 24px 20px;
+  width: 252px;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -65,15 +65,15 @@
 }
 
 .cah-black-card.small {
-  width: 240px;
-  min-height: 240px;
+  width: 196px;
+  min-height: 280px;
   padding: 18px 16px;
 }
 
 .cah-black-card.large {
-  width: 340px;
-  min-height: 340px;
-  padding: 32px 24px;
+  width: 294px;
+  min-height: 420px;
+  padding: 28px 22px;
 }
 
 .cah-black-card .cah-card-text {
@@ -115,15 +115,15 @@
 /* White/Fill Cards */
 .cah-white-card {
   background-image: url('/cah/fill.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   color: #1a1a2e;
   border: none;
   border-radius: 12px;
   overflow: hidden;
   padding: 14px 12px;
-  width: 140px;
-  min-height: 140px;
+  width: 126px;
+  min-height: 180px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -304,8 +304,8 @@
 }
 
 .cah-white-card.in-submission {
-  width: 130px;
-  min-height: 130px;
+  width: 112px;
+  min-height: 160px;
   cursor: inherit;
   animation: none;
 }
@@ -555,32 +555,32 @@
   }
 
   .cah-white-card {
-    width: 110px;
-    min-height: 110px;
+    width: 98px;
+    min-height: 140px;
     padding: 10px 8px;
   }
 
   .cah-white-card .cah-card-text {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   .cah-black-card {
-    width: 250px;
-    min-height: 250px;
-    padding: 20px 16px;
+    width: 210px;
+    min-height: 300px;
+    padding: 18px 14px;
   }
 
   .cah-black-card .cah-card-text {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .cah-black-card.small {
-    width: 200px;
-    min-height: 200px;
+    width: 168px;
+    min-height: 240px;
   }
 
   .cah-white-card.in-submission {
-    width: 100px;
-    min-height: 100px;
+    width: 84px;
+    min-height: 120px;
   }
 }
