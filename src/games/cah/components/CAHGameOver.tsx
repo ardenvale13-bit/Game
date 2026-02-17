@@ -70,14 +70,14 @@ export default function CAHGameOver({ onPlayAgain, onLeave }: CAHGameOverProps) 
 
         {/* Actions */}
         <div className="cah-game-over-actions">
-          <button 
+          <button
             className="btn btn-primary btn-large"
             onClick={handlePlayAgain}
-            style={{ background: '#000', border: '2px solid #fff', flex: 1 }}
+            style={{ flex: 1 }}
           >
             Play Again
           </button>
-          <button 
+          <button
             className="btn btn-secondary btn-large"
             onClick={onLeave}
             style={{ flex: 1 }}

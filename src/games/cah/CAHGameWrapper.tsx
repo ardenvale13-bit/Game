@@ -45,7 +45,6 @@ export default function CAHGameWrapper() {
   const {
     isReady,
     broadcastRoundStart,
-    broadcastDealCards,
     broadcastPhaseChange,
     broadcastTimerSync,
     broadcastSubmissionCount,
@@ -89,23 +88,16 @@ export default function CAHGameWrapper() {
     }
   }, [isHost, isReady, cahPlayers.length, phase, startGame]);
 
-  // HOST: after startGame / startRound, broadcast round start + deal cards to non-host players
+  // HOST: after startGame / startRound, broadcast round start (includes hands atomically)
+  const lastBroadcastRound = useRef(0);
   useEffect(() => {
     if (!isHost) return;
-    if (phase === 'playing' && prevPhaseRef.current !== 'playing') {
-      // Small delay to let store settle
+    const state = useCAHStore.getState();
+    if (phase === 'playing' && state.currentRound > lastBroadcastRound.current) {
+      lastBroadcastRound.current = state.currentRound;
+      // Small delay to let store settle after startRound()
       const t = setTimeout(() => {
-        const state = useCAHStore.getState();
-
-        // Broadcast round start
         broadcastRoundStart();
-
-        // Deal cards to each non-host player
-        state.players.forEach(p => {
-          if (!p.isHost) {
-            broadcastDealCards(p.id, p.hand);
-          }
-        });
       }, 100);
       return () => clearTimeout(t);
     }

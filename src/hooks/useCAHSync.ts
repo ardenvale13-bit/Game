@@ -32,22 +32,27 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     if (!isHost) {
       // --- NON-HOST: Listen for game state from host ---
 
-      // Round start — black card, czar, etc.
+      // Round start — black card, czar, hands, etc. (single atomic broadcast)
       channel.on('broadcast', { event: 'cah_round_start' }, ({ payload }) => {
         if (!payload) return;
-        const { blackCard, czarIndex, round, phase, timeRemaining } = payload as {
+        const { blackCard, czarIndex, round, phase, timeRemaining, playerHands } = payload as {
           blackCard: BlackCard;
           czarIndex: number;
           round: number;
           phase: CAHPhase;
           timeRemaining: number;
+          playerHands?: Record<string, WhiteCard[]>;
         };
-        const players = store.getState().players.map((p, idx) => ({
-          ...p,
-          isCzar: idx === czarIndex,
-          selectedCards: [],
-          hasSubmitted: false,
-        }));
+        const players = store.getState().players.map((p, idx) => {
+          const hand = playerHands?.[p.id] ?? p.hand;
+          return {
+            ...p,
+            hand,
+            isCzar: idx === czarIndex,
+            selectedCards: [] as WhiteCard[],
+            hasSubmitted: false,
+          };
+        });
         store.setState({
           currentBlackCard: blackCard,
           czarIndex,
@@ -280,11 +285,16 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
 
   // --- BROADCAST HELPERS ---
 
-  // Host broadcasts round start
+  // Host broadcasts round start (includes all player hands in one atomic message)
   const broadcastRoundStart = useCallback(() => {
     const channel = channelRef.current;
     if (!channel || !isHost) return;
     const state = store.getState();
+    // Include each player's hand so non-host gets cards in the same broadcast
+    const playerHands: Record<string, WhiteCard[]> = {};
+    state.players.forEach(p => {
+      playerHands[p.id] = p.hand;
+    });
     channel.send({
       type: 'broadcast',
       event: 'cah_round_start',
@@ -294,6 +304,7 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         round: state.currentRound,
         phase: state.phase,
         timeRemaining: state.timeRemaining,
+        playerHands,
       },
     });
   }, [isHost]);

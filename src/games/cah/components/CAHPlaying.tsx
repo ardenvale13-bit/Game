@@ -137,7 +137,6 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
                 className="btn btn-primary"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                style={{ background: canSubmit ? '#000' : '#333', border: '2px solid #fff' }}
               >
                 Submit Cards
               </button>
