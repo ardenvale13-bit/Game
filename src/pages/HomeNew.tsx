@@ -22,7 +22,7 @@ export default function Home() {
         />
       </div>
       <h1 className="game-title">Game Time</h1>
-      <p className="tagline">Party games for horrible people</p>
+      <p className="tagline">Party games for the digitally unhinged</p>
       
       <div className="home-actions">
         <button 

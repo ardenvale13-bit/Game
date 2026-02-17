@@ -63,7 +63,7 @@ export default function CAHLobby() {
       {/* Game Title */}
       <div className="card text-center mb-3" style={{ background: '#000', border: '3px solid #fff' }}>
         <h2 style={{ color: '#fff', marginBottom: '4px' }}>Cards Against Humanity</h2>
-        <p className="text-muted" style={{ fontSize: '0.9rem' }}>A party game for horrible people</p>
+        <p className="text-muted" style={{ fontSize: '0.9rem' }}>A party game for the digitally unhinged</p>
       </div>
 
       {/* Room Code Card */}
