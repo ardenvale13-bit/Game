@@ -1,6 +1,8 @@
 /* Cards Against Humanity - Styles */
+@import url('https://fonts.googleapis.com/css2?family=Delius+Unicase:wght@400;700&display=swap');
 
 .cah-layout {
+  font-family: 'Delius Unicase', cursive;
   min-height: 100vh;
   padding: 20px;
   display: flex;
@@ -45,11 +47,12 @@
 
 .cah-black-card {
   background-image: url('/cah/prompt.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   color: #fff;
   border: none;
   border-radius: 16px;
+  overflow: hidden;
   padding: 28px 22px;
   width: 260px;
   min-height: 380px;
@@ -74,6 +77,7 @@
 }
 
 .cah-black-card .cah-card-text {
+  font-family: 'Delius Unicase', cursive;
   font-size: 0.95rem;
   font-weight: 700;
   line-height: 1.4;
@@ -111,11 +115,12 @@
 /* White/Fill Cards */
 .cah-white-card {
   background-image: url('/cah/fill.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   color: #1a1a2e;
-  border: 2px solid rgba(180, 170, 220, 0.3);
+  border: none;
   border-radius: 12px;
+  overflow: hidden;
   padding: 14px 12px;
   width: 130px;
   min-height: 195px;
@@ -148,7 +153,8 @@
 }
 
 .cah-white-card.selected {
-  border-color: var(--accent-primary);
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
   box-shadow: 0 0 20px var(--glow-primary), 0 8px 25px rgba(0, 0, 0, 0.3);
   animation: cardSelect 0.3s ease-out;
 }
@@ -160,6 +166,7 @@
 }
 
 .cah-white-card .cah-card-text {
+  font-family: 'Delius Unicase', cursive;
   font-size: 0.65rem;
   font-weight: 600;
   line-height: 1.3;
