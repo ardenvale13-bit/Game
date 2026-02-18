@@ -663,3 +663,35 @@
     flex-direction: column;
   }
 }
+
+/* Picker Word Reveal (shown to the word picker during guessing) */
+.hangman-picker-word-reveal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 20px;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 8px;
+}
+
+.hangman-picker-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.hangman-picker-word {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00f0ff;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 3px;
+}
+
+.hangman-picker-category {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

@@ -18,6 +18,8 @@ export default function HangmanGuessing({ onGuessLetter }: HangmanGuessingProps)
     maxRounds,
     wrongGuesses,
     maxWrong,
+    secretWord,
+    category,
   } = useHangmanStore();
 
   const picker = players[currentPickerIndex];
@@ -47,7 +49,12 @@ export default function HangmanGuessing({ onGuessLetter }: HangmanGuessingProps)
       <div className="hangman-keyboard-section">
         {isCurrentPlayerPicker ? (
           <div className="hangman-picker-waiting">
-            <p>You're the picker. Wait for others to guess...</p>
+            <p>You're the picker — wait for others to guess!</p>
+            <div className="hangman-picker-word-reveal">
+              <span className="hangman-picker-label">Your word:</span>
+              <span className="hangman-picker-word">{secretWord}</span>
+              {category && <span className="hangman-picker-category">({category})</span>}
+            </div>
           </div>
         ) : (
           <>

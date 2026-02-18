@@ -177,6 +177,8 @@ export default function Lobby() {
       case 'cah': return '/cah-icon.png';
       case 'codenames': return '/codenames-icon.png';
       case 'wmlt': return '/wmlt-icon.png';
+      case 'hangman': return '/hangman-icon.png';
+      case 'wavelength': return '/wavelength-icon.png';
       default: return '';
     }
   };

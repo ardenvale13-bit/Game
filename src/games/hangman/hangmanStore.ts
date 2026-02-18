@@ -54,7 +54,7 @@ interface HangmanActions {
   isGameLost: () => boolean;
 }
 
-const MAX_WRONG = 6;
+const MAX_WRONG = 10;
 const MAX_ROUNDS = 5;
 
 const initialState: HangmanGameState = {
