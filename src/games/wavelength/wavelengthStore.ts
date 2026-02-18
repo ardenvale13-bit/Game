@@ -130,7 +130,6 @@ const useWavelengthStore = create<WavelengthGameState & WavelengthActions>((set,
 
   // --- Game flow ---
   startGame: () => {
-    const s = get();
     const spectrum = getRandomSpectrum();
     const targetPosition = generateTargetPosition();
 

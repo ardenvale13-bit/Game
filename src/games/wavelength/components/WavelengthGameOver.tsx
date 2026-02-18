@@ -6,7 +6,7 @@ import useLobbyStore from '../../../store/lobbyStore';
 export default function WavelengthGameOver() {
   const navigate = useNavigate();
   const { winner, pinkScore, blueScore, players, currentPlayerId } = useWavelengthStore();
-  const lobbyStore = useLobbyStore();
+  const _lobbyStore = useLobbyStore();
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const playerWon = currentPlayer?.team === winner;
 
