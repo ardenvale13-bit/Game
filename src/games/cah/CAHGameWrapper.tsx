@@ -52,6 +52,7 @@ export default function CAHGameWrapper() {
     broadcastGameOver,
     broadcastSubmitCards,
     broadcastPickWinner,
+    broadcastTTS,
   } = useCAHSync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
@@ -296,6 +297,7 @@ export default function CAHGameWrapper() {
         <CAHJudging
           onPickWinner={handlePickWinner}
           isHost={isHost}
+          onReadAloud={broadcastTTS}
         />
       );
     case 'reveal':

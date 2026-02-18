@@ -123,13 +123,6 @@ export default function Home() {
             <Sparkle key={s.id} delay={s.delay} x={s.x} y={s.y} size={s.size} />
           ))}
         </div>
-        <div className="home-logo">
-          <img
-            src="/controller.png"
-            alt="Controller"
-            className="home-controller-img"
-          />
-        </div>
         <img
           src="/game-time.png"
           alt="Game Time"

@@ -1,12 +1,14 @@
 // CAH Judging Component - Czar picks the winner
+import { useState } from 'react';
 import useCAHStore from '../cahStore';
 
 interface CAHJudgingProps {
   onPickWinner?: (winnerId: string) => void;
   isHost?: boolean;
+  onReadAloud?: (text: string) => void;
 }
 
-export default function CAHJudging({ onPickWinner }: CAHJudgingProps) {
+export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProps) {
   const {
     currentBlackCard,
     currentRound,
@@ -20,8 +22,9 @@ export default function CAHJudging({ onPickWinner }: CAHJudgingProps) {
 
   const czar = getCurrentCzar();
   const isCzar = isCurrentPlayerCzar();
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
 
-  // Format black card text with answers filled in
+  // Format black card text with answers filled in (JSX version for display)
   const formatBlackCardWithAnswers = (text: string, answers: string[]) => {
     const parts = text.split('_');
     return parts.map((part, idx) => (
@@ -36,16 +39,42 @@ export default function CAHJudging({ onPickWinner }: CAHJudgingProps) {
     ));
   };
 
+  // Build plain text version for TTS
+  const buildFilledText = (text: string, answers: string[]): string => {
+    const parts = text.split('_');
+    let result = '';
+    parts.forEach((part, idx) => {
+      result += part;
+      if (idx < parts.length - 1 && answers[idx]) {
+        result += answers[idx];
+      }
+    });
+    return result;
+  };
+
   const handleSelectWinner = (playerId: string) => {
     if (!isCzar) return;
 
     if (onPickWinner) {
-      // Use the broadcast callback (handles both host and non-host czar)
       onPickWinner(playerId);
     } else {
-      // Fallback: select locally
       selectWinner(playerId);
     }
+  };
+
+  const handleReadAloud = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onReadAloud || !currentBlackCard) return;
+
+    const submission = submissions[idx];
+    const filledText = buildFilledText(
+      currentBlackCard.text,
+      submission.cards.map(c => c.text)
+    );
+
+    onReadAloud(filledText);
+    setSpeakingIdx(idx);
+    setTimeout(() => setSpeakingIdx(null), 3000);
   };
 
   return (
@@ -91,6 +120,17 @@ export default function CAHJudging({ onPickWinner }: CAHJudgingProps) {
               {formatBlackCardWithAnswers(
                 currentBlackCard?.text || '',
                 submission.cards.map(c => c.text)
+              )}
+
+              {/* TTS mic button - czar only */}
+              {isCzar && onReadAloud && (
+                <button
+                  className={`cah-tts-btn ${speakingIdx === idx ? 'speaking' : ''}`}
+                  onClick={(e) => handleReadAloud(idx, e)}
+                  title="Read aloud"
+                >
+                  {speakingIdx === idx ? '🔊' : '🎤'}
+                </button>
               )}
             </div>
           </div>

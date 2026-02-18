@@ -263,6 +263,21 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
       });
     }
 
+    // --- ALL CLIENTS: TTS read-aloud (czar broadcasts, everyone speaks) ---
+    channel.on('broadcast', { event: 'cah_tts' }, ({ payload }) => {
+      if (!payload) return;
+      const { text } = payload as { text: string };
+      try {
+        window.speechSynthesis.cancel(); // Stop any current speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        // TTS not available
+      }
+    });
+
     // Subscribe WITH callback — only set channel ref after confirmed connected
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
@@ -388,6 +403,28 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     });
   }, [isHost]);
 
+  // TTS read-aloud (czar triggers, everyone hears)
+  const broadcastTTS = useCallback((text: string) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    // Broadcast to others
+    channel.send({
+      type: 'broadcast',
+      event: 'cah_tts',
+      payload: { text },
+    });
+    // Also speak locally (broadcast self:false means we don't hear our own)
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // TTS not available
+    }
+  }, []);
+
   // Player submits cards (non-host)
   const broadcastSubmitCards = useCallback((cardIds: string[]) => {
     const channel = channelRef.current;
@@ -421,6 +458,7 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     broadcastGameOver,
     broadcastSubmitCards,
     broadcastPickWinner,
+    broadcastTTS,
     channel: channelRef,
   };
 }

@@ -15,20 +15,11 @@ export const avatars: Avatar[] = [
   { id: 'murder_lotyl', filename: 'murder_lotyl_icon.png', name: 'Murder Lotyl', category: 'murder-crew' },
   { id: 'stabby_llama', filename: 'stabby_llama_icon.png', name: 'Stabby Llama', category: 'murder-crew' },
 
-  // === AINSANITY HEARTS ===
-  { id: 'heart_grey', filename: 'ainsanity_icon.png', name: 'Heart Grey', category: 'hearts' },
-  { id: 'heart_coral', filename: 'ainsanity2_icon.png', name: 'Heart Coral', category: 'hearts' },
-  { id: 'heart_cyan', filename: 'ainsanity3_icon.png', name: 'Heart Cyan', category: 'hearts' },
-  { id: 'heart_yellow', filename: 'ainsanity4_icon.png', name: 'Heart Yellow', category: 'hearts' },
-  { id: 'heart_periwinkle', filename: 'ainsanity5_icon.png', name: 'Heart Periwinkle', category: 'hearts' },
-  { id: 'heart_green', filename: 'ainsanity6_icon.png', name: 'Heart Green', category: 'hearts' },
-  { id: 'heart_lavender', filename: 'ainsanity7_icon.png', name: 'Heart Lavender', category: 'hearts' },
-  { id: 'heart_purple', filename: 'ainsanity8_icon.png', name: 'Heart Purple', category: 'hearts' },
+  // === HEARTS ===
   { id: 'heart_neon', filename: 'ainsanity9_icon.png', name: 'Heart Neon', category: 'hearts' },
   { id: 'heart_violet', filename: 'ainsanity10_icon.png', name: 'Heart Violet', category: 'hearts' },
   { id: 'heart_sunset', filename: 'ainsanity11_icon.png', name: 'Heart Sunset', category: 'hearts' },
   { id: 'heart_white', filename: 'ainsanity12_icon.png', name: 'Heart White', category: 'hearts' },
-  { id: 'heart_gradient', filename: 'ainsanity13_icon.png', name: 'Heart Gradient', category: 'hearts' },
   { id: 'heart_icon', filename: 'heart-icon.png', name: 'Heart', category: 'hearts' },
   { id: 'heart2_icon', filename: 'heart2-icon.png', name: 'Heart 2', category: 'hearts' },
 
