@@ -159,7 +159,7 @@ export default function Lobby() {
 
   const getGameName = (game: GameType) => {
     switch (game) {
-      case 'pictionary': return "Scribbl n' Guess";
+      case 'pictionary': return "Scribbl n' Draw";
       case 'cah': return 'Cards Against Humanity';
       case 'codenames': return 'Codenames';
       case 'wmlt': return "Who's Most Likely To";
@@ -256,114 +256,83 @@ export default function Lobby() {
         </div>
       </div>
 
-      {/* Game Selection - Host Only */}
-      {hostPlayer && (
-        <div className="card mb-3">
-          <h3 className="mb-2">Choose Game</h3>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+      {/* Game Selection - visible to all, clickable by host only */}
+      <div className="card mb-3">
+        <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+          {(['pictionary', 'cah', 'codenames', 'wmlt'] as GameType[]).map((game) => (
             <button
-              className={`game-select-btn ${selectedGame === 'pictionary' ? 'selected' : ''}`}
-              onClick={() => handleSelectGame('pictionary')}
+              key={game}
+              className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}
+              onClick={() => hostPlayer && handleSelectGame(game)}
+              style={!hostPlayer ? { cursor: 'default', opacity: selectedGame && selectedGame !== game ? 0.5 : 1 } : {}}
             >
-              <img src="/pictionary-icon.png" alt="Scribbl n' Guess" className="game-icon-img" />
+              <img src={getGameIcon(game)} alt={getGameName(game)} className="game-icon-img" />
             </button>
-            <button
-              className={`game-select-btn ${selectedGame === 'cah' ? 'selected' : ''}`}
-              onClick={() => handleSelectGame('cah')}
-            >
-              <img src="/cah-icon.png" alt="Cards Against Humanity" className="game-icon-img" />
-            </button>
-            <button
-              className={`game-select-btn ${selectedGame === 'codenames' ? 'selected' : ''}`}
-              onClick={() => handleSelectGame('codenames')}
-            >
-              <img src="/codenames-icon.png" alt="Codenames" className="game-icon-img" />
-            </button>
-            <button
-              className={`game-select-btn ${selectedGame === 'wmlt' ? 'selected' : ''}`}
-              onClick={() => handleSelectGame('wmlt')}
-            >
-              <img src="/wmlt-icon.png" alt="Who's Most Likely To" className="game-icon-img" />
-            </button>
-          </div>
-
-          {selectedGame && players.length < getMinPlayers(selectedGame) && (
-            <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
-              Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {selectedGame === 'cah' ? 'Cards Against Humanity' : selectedGame === 'codenames' ? 'Codenames' : 'Pictionary'}
-            </div>
-          )}
-
-          {/* Round count selector for WMLT */}
-          {selectedGame === 'wmlt' && (
-            <div className="mt-3">
-              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[5, 10, 15].map((count) => (
-                  <button
-                    key={count}
-                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                    onClick={() => handleRoundCountChange(count)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      fontSize: '0.95rem',
-                      fontWeight: roundCount === count ? 700 : 400,
-                    }}
-                  >
-                    {count}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Round count selector for Scribbl n' Draw */}
-          {selectedGame === 'pictionary' && (
-            <div className="mt-3">
-              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[3, 5, 10].map((count) => (
-                  <button
-                    key={count}
-                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                    onClick={() => handleRoundCountChange(count)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      fontSize: '0.95rem',
-                      fontWeight: roundCount === count ? 700 : 400,
-                    }}
-                  >
-                    {count}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
-      )}
 
-      {/* Non-host sees selected game */}
-      {!hostPlayer && selectedGame && (
-        <div className="card mb-3 text-center">
-          <div className="text-muted mb-1" style={{ fontSize: '0.9rem' }}>Selected Game</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <img
-              src={getGameIcon(selectedGame)}
-              alt={selectedGame || ''}
-              style={{ width: '32px', height: '32px', borderRadius: '6px' }}
-            />
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-              {getGameName(selectedGame)}
-            </span>
+        {selectedGame && players.length < getMinPlayers(selectedGame) && (
+          <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
+            Need {getMinPlayers(selectedGame) - players.length} more player{getMinPlayers(selectedGame) - players.length !== 1 ? 's' : ''} for {getGameName(selectedGame)}
           </div>
-          {(selectedGame === 'pictionary' || selectedGame === 'wmlt') && (
-            <div className="text-muted mt-2" style={{ fontSize: '0.85rem' }}>
-              {roundCount} rounds
+        )}
+
+        {!hostPlayer && selectedGame && (
+          <div className="text-muted mt-2 text-center" style={{ fontSize: '0.85rem' }}>
+            Host selected: <strong>{getGameName(selectedGame)}</strong>
+            {(selectedGame === 'pictionary' || selectedGame === 'wmlt') && ` · ${roundCount} rounds`}
+          </div>
+        )}
+
+        {/* Round count selector for WMLT - host only */}
+        {hostPlayer && selectedGame === 'wmlt' && (
+          <div className="mt-3">
+            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[5, 10, 15].map((count) => (
+                <button
+                  key={count}
+                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleRoundCountChange(count)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '0.95rem',
+                    fontWeight: roundCount === count ? 700 : 400,
+                  }}
+                >
+                  {count}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {/* Round count selector for Scribbl n' Draw - host only */}
+        {hostPlayer && selectedGame === 'pictionary' && (
+          <div className="mt-3">
+            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[3, 5, 10].map((count) => (
+                <button
+                  key={count}
+                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleRoundCountChange(count)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '0.95rem',
+                    fontWeight: roundCount === count ? 700 : 400,
+                  }}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Start Game Button */}
       {hostPlayer ? (

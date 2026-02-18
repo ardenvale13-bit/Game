@@ -26,7 +26,7 @@ interface LobbyState {
   isInGame: boolean;
 
   // Game settings
-  roundCount: number; // For Pictionary: 3, 5, or 10
+  roundCount: number; // For Scribbl n' Draw: 3, 5, or 10; WMLT: 5, 10, 15
 }
 
 interface LobbyActions {

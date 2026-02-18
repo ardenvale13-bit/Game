@@ -54,7 +54,7 @@ export default function Home() {
             onClick={() => setSelectedGame('pictionary')}
           >
             <span className="game-icon">🎨</span>
-            <span className="game-name">Pictionary</span>
+            <span className="game-name">Scribbl n' Draw</span>
           </button>
           <button
             className={`game-select-btn ${selectedGame === 'cah' ? 'selected' : ''}`}
