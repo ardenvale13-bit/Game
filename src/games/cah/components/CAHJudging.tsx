@@ -5,7 +5,7 @@ import useCAHStore from '../cahStore';
 interface CAHJudgingProps {
   onPickWinner?: (winnerId: string) => void;
   isHost?: boolean;
-  onReadAloud?: (text: string) => void;
+  onReadAloud?: (text: string) => Promise<void> | void;
 }
 
 export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProps) {
@@ -23,6 +23,7 @@ export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProp
   const czar = getCurrentCzar();
   const isCzar = isCurrentPlayerCzar();
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
+  const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
 
   // Format black card text with answers filled in (JSX version for display)
   const formatBlackCardWithAnswers = (text: string, answers: string[]) => {
@@ -62,9 +63,9 @@ export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProp
     }
   };
 
-  const handleReadAloud = (idx: number, e: React.MouseEvent) => {
+  const handleReadAloud = async (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!onReadAloud || !currentBlackCard) return;
+    if (!onReadAloud || !currentBlackCard || loadingIdx !== null) return;
 
     const submission = submissions[idx];
     const filledText = buildFilledText(
@@ -72,7 +73,12 @@ export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProp
       submission.cards.map(c => c.text)
     );
 
-    onReadAloud(filledText);
+    setLoadingIdx(idx);
+    try {
+      await onReadAloud(filledText);
+    } finally {
+      setLoadingIdx(null);
+    }
     setSpeakingIdx(idx);
     setTimeout(() => setSpeakingIdx(null), 3000);
   };
@@ -125,11 +131,12 @@ export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProp
               {/* TTS mic button - czar only */}
               {isCzar && onReadAloud && (
                 <button
-                  className={`cah-tts-btn ${speakingIdx === idx ? 'speaking' : ''}`}
+                  className={`cah-tts-btn ${speakingIdx === idx ? 'speaking' : ''} ${loadingIdx === idx ? 'loading' : ''}`}
                   onClick={(e) => handleReadAloud(idx, e)}
                   title="Read aloud"
+                  disabled={loadingIdx !== null}
                 >
-                  {speakingIdx === idx ? '🔊' : '🎤'}
+                  {loadingIdx === idx ? '⏳' : speakingIdx === idx ? '🔊' : '🎤'}
                 </button>
               )}
             </div>

@@ -6,6 +6,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import useCAHStore from '../games/cah/cahStore';
 import type { CAHPhase, CAHSubmission } from '../games/cah/cahStore';
 import type { WhiteCard, BlackCard } from '../games/cah/cardData';
+import { isElevenLabsConfigured, generateSpeech, playBase64Audio, speakWithBrowser } from '../lib/elevenlabsTTS';
 
 interface UseCAHSyncOptions {
   roomCode: string | null;
@@ -263,18 +264,17 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
       });
     }
 
-    // --- ALL CLIENTS: TTS read-aloud (czar broadcasts, everyone speaks) ---
+    // --- ALL CLIENTS: TTS read-aloud (czar generates audio, broadcasts to all) ---
     channel.on('broadcast', { event: 'cah_tts' }, ({ payload }) => {
       if (!payload) return;
-      const { text } = payload as { text: string };
-      try {
-        window.speechSynthesis.cancel(); // Stop any current speech
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.95;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        // TTS not available
+      const { audioBase64, text } = payload as { audioBase64?: string; text?: string };
+
+      if (audioBase64) {
+        // ElevenLabs audio — play the pre-generated audio
+        playBase64Audio(audioBase64);
+      } else if (text) {
+        // Fallback: browser TTS
+        speakWithBrowser(text);
       }
     });
 
@@ -404,25 +404,34 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
   }, [isHost]);
 
   // TTS read-aloud (czar triggers, everyone hears)
-  const broadcastTTS = useCallback((text: string) => {
+  const broadcastTTS = useCallback(async (text: string) => {
     const channel = channelRef.current;
     if (!channel) return;
-    // Broadcast to others
+
+    if (isElevenLabsConfigured()) {
+      // Generate audio via ElevenLabs
+      const audioBase64 = await generateSpeech(text);
+      if (audioBase64) {
+        // Broadcast pre-generated audio to others
+        channel.send({
+          type: 'broadcast',
+          event: 'cah_tts',
+          payload: { audioBase64 },
+        });
+        // Play locally too (self:false means we don't get our own broadcast)
+        playBase64Audio(audioBase64);
+        return;
+      }
+      // If ElevenLabs failed, fall through to browser TTS
+    }
+
+    // Fallback: browser TTS
     channel.send({
       type: 'broadcast',
       event: 'cah_tts',
       payload: { text },
     });
-    // Also speak locally (broadcast self:false means we don't hear our own)
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      // TTS not available
-    }
+    speakWithBrowser(text);
   }, []);
 
   // Player submits cards (non-host)
