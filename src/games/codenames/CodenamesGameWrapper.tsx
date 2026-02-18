@@ -1,5 +1,5 @@
 // Codenames — Main game orchestrator
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../../store/lobbyStore';
 import useCodenamesStore from './codenamesStore';
@@ -23,6 +23,43 @@ export default function CodenamesGameWrapper() {
 
   const isHost = lobby.isHost();
   const currentPlayerId = lobby.currentPlayerId;
+
+  // Clue announcement state
+  const [announcedClue, setAnnouncedClue] = useState<{ word: string; number: number; team: string } | null>(null);
+  const [clueVisible, setClueVisible] = useState(false);
+  const announceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevPhaseRef = useRef(cn.phase);
+
+  // Watch for phase transition into operative-guess (means a clue was just submitted)
+  useEffect(() => {
+    if (prevPhaseRef.current === 'spymaster-clue' && cn.phase === 'operative-guess' && cn.currentClue) {
+      // Trigger the announcement
+      setAnnouncedClue({
+        word: cn.currentClue.word,
+        number: cn.currentClue.number,
+        team: cn.currentClue.team,
+      });
+      setClueVisible(true);
+
+      // Clear any existing timeout
+      if (announceTimeoutRef.current) clearTimeout(announceTimeoutRef.current);
+
+      // Hide after 5 seconds
+      announceTimeoutRef.current = setTimeout(() => {
+        setClueVisible(false);
+        // Remove from DOM after fade-out animation completes
+        setTimeout(() => setAnnouncedClue(null), 500);
+      }, 5000);
+    }
+    prevPhaseRef.current = cn.phase;
+  }, [cn.phase, cn.currentClue]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (announceTimeoutRef.current) clearTimeout(announceTimeoutRef.current);
+    };
+  }, []);
 
   // Initialize codenames store with lobby players
   useEffect(() => {
@@ -133,10 +170,6 @@ export default function CodenamesGameWrapper() {
       // Unvote — clicking same card again
       if (isHost) {
         cn.unvoteCard(currentPlayerId, cardIndex);
-        // Broadcast board update via sync
-      } else {
-        // Non-host sends unvote to host
-        // For simplicity, sendVoteCard handles toggle logic on host side
       }
     }
     sendVoteCard(cardIndex);
@@ -156,7 +189,6 @@ export default function CodenamesGameWrapper() {
 
   const handlePlayAgain = () => {
     if (!isHost) return;
-    // Reset to team setup, keep players and teams
     useCodenamesStore.setState({
       phase: 'team-setup',
       board: [],
@@ -199,6 +231,23 @@ export default function CodenamesGameWrapper() {
   // Main game view
   return (
     <div className="cn-layout">
+      {/* Clue Announcement Overlay */}
+      {announcedClue && (
+        <div className={`cn-clue-announce-overlay ${clueVisible ? 'visible' : 'fading'}`}>
+          <div className={`cn-clue-announce ${announcedClue.team}`}>
+            <div className="cn-clue-announce-label">
+              {announcedClue.team === 'pink' ? 'Pink' : 'Blue'} Spymaster says:
+            </div>
+            <div className={`cn-clue-announce-word ${announcedClue.team}`}>
+              {announcedClue.word}
+            </div>
+            <div className="cn-clue-announce-number">
+              {announcedClue.number === 0 ? '∞' : announcedClue.number}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="cn-header">
         <div className="cn-turn-indicator">

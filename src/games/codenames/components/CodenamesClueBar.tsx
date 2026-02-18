@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import useCodenamesStore from '../codenamesStore';
 
+// Short words that are OK to use in multi-word clues (won't trigger board-word blocking)
+const IGNORE_WORDS = new Set(['A', 'AN', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'ON', 'AT', 'IS', 'IT', 'FOR', 'BY', 'NO', 'NOT', 'BUT', 'SO', 'IF']);
+
 interface CodenamesClueBarProps {
   onSubmitClue: (word: string, number: number) => void;
   onEndTurn: () => void;
@@ -15,6 +18,7 @@ export default function CodenamesClueBar({ onSubmitClue, onEndTurn }: CodenamesC
     guessesRemaining,
     timerEnabled,
     timeRemaining,
+    board,
   } = useCodenamesStore();
 
   const currentPlayer = useCodenamesStore.getState().getCurrentPlayer();
@@ -23,12 +27,54 @@ export default function CodenamesClueBar({ onSubmitClue, onEndTurn }: CodenamesC
 
   const [clueWord, setClueWord] = useState('');
   const [clueNumber, setClueNumber] = useState(1);
+  const [error, setError] = useState('');
+
+  // Validate clue: max 3 words, can't use board words
+  const validateClue = (clue: string): string | null => {
+    const trimmed = clue.trim();
+    if (!trimmed) return null;
+
+    // Word count check (max 3)
+    const words = trimmed.split(/\s+/);
+    if (words.length > 3) {
+      return 'Clue can be max 3 words!';
+    }
+
+    // Check each significant word against board words
+    const boardWords = board.map(c => c.word.toUpperCase());
+    for (const word of words) {
+      const upper = word.toUpperCase();
+      if (IGNORE_WORDS.has(upper)) continue;
+      // Check if any board word matches or contains this clue word as a standalone word
+      for (const bw of boardWords) {
+        if (upper === bw || bw.split(/\s+/).includes(upper)) {
+          return `Can't use "${word}" — it's on the board!`;
+        }
+      }
+    }
+
+    return null; // valid
+  };
+
+  const handleClueChange = (value: string) => {
+    setClueWord(value);
+    if (error) setError('');
+  };
 
   const handleSubmit = () => {
-    if (!clueWord.trim()) return;
-    onSubmitClue(clueWord.trim(), clueNumber);
+    const trimmed = clueWord.trim();
+    if (!trimmed) return;
+
+    const validationError = validateClue(trimmed);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    onSubmitClue(trimmed, clueNumber);
     setClueWord('');
     setClueNumber(1);
+    setError('');
   };
 
   const formatTime = (seconds: number) => {
@@ -42,15 +88,22 @@ export default function CodenamesClueBar({ onSubmitClue, onEndTurn }: CodenamesC
     return (
       <div className="cn-clue-bar">
         <div className="cn-clue-input-row">
-          <input
-            type="text"
-            className="cn-clue-input"
-            placeholder="Enter clue word..."
-            value={clueWord}
-            onChange={(e) => setClueWord(e.target.value.replace(/\s+/g, ''))}
-            maxLength={30}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <input
+              type="text"
+              className="cn-clue-input"
+              placeholder="Enter clue (max 3 words)..."
+              value={clueWord}
+              onChange={(e) => handleClueChange(e.target.value)}
+              maxLength={40}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            />
+            {error && (
+              <div style={{ color: 'var(--accent-secondary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                {error}
+              </div>
+            )}
+          </div>
           <select
             className="cn-number-select"
             value={clueNumber}
