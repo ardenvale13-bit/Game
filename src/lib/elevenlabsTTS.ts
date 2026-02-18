@@ -5,6 +5,14 @@ const API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
 const VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Default: "Adam" — deep male voice
 const MODEL_ID = import.meta.env.VITE_ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
 
+// Debug: log config state on load
+console.log('[ElevenLabs] Config loaded:', {
+  hasApiKey: !!API_KEY,
+  keyPrefix: API_KEY ? API_KEY.substring(0, 8) + '...' : '(empty)',
+  voiceId: VOICE_ID,
+  modelId: MODEL_ID,
+});
+
 export const isElevenLabsConfigured = (): boolean => !!API_KEY;
 
 /**
@@ -12,7 +20,12 @@ export const isElevenLabsConfigured = (): boolean => !!API_KEY;
  * Returns base64-encoded mp3 string, or null on failure
  */
 export async function generateSpeech(text: string): Promise<string | null> {
-  if (!API_KEY) return null;
+  if (!API_KEY) {
+    console.warn('[ElevenLabs] No API key configured, falling back to browser TTS');
+    return null;
+  }
+
+  console.log('[ElevenLabs] Generating speech for:', text.substring(0, 50) + '...');
 
   try {
     const response = await fetch(
@@ -38,11 +51,14 @@ export async function generateSpeech(text: string): Promise<string | null> {
     );
 
     if (!response.ok) {
-      console.warn('[ElevenLabs] API error:', response.status, response.statusText);
+      const errorBody = await response.text().catch(() => '(no body)');
+      console.error('[ElevenLabs] API error:', response.status, response.statusText, errorBody);
       return null;
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    console.log('[ElevenLabs] Got audio:', (arrayBuffer.byteLength / 1024).toFixed(1) + 'KB');
+
     // Convert to base64 for broadcasting
     const bytes = new Uint8Array(arrayBuffer);
     let binary = '';
@@ -51,7 +67,7 @@ export async function generateSpeech(text: string): Promise<string | null> {
     }
     return btoa(binary);
   } catch (err) {
-    console.warn('[ElevenLabs] TTS generation failed:', err);
+    console.error('[ElevenLabs] TTS generation failed:', err);
     return null;
   }
 }
@@ -61,9 +77,10 @@ export async function generateSpeech(text: string): Promise<string | null> {
  * Returns the Audio element for potential cleanup
  */
 export function playBase64Audio(base64: string): HTMLAudioElement {
+  console.log('[ElevenLabs] Playing audio, size:', (base64.length / 1024).toFixed(1) + 'KB base64');
   const audio = new Audio(`data:audio/mpeg;base64,${base64}`);
   audio.play().catch((err) => {
-    console.warn('[ElevenLabs] Audio playback failed:', err);
+    console.error('[ElevenLabs] Audio playback failed:', err);
   });
   return audio;
 }
@@ -72,6 +89,7 @@ export function playBase64Audio(base64: string): HTMLAudioElement {
  * Fallback: use browser speechSynthesis
  */
 export function speakWithBrowser(text: string): void {
+  console.log('[ElevenLabs] Using browser TTS fallback for:', text.substring(0, 50) + '...');
   try {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
