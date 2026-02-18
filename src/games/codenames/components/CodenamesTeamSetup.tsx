@@ -1,4 +1,5 @@
 // Codenames — Team Setup (pre-game role/team selection)
+import { useState } from 'react';
 import useCodenamesStore from '../codenamesStore';
 import type { TeamColor, PlayerRole } from '../codenamesData';
 
@@ -10,17 +11,24 @@ interface CodenamesTeamSetupProps {
 }
 
 export default function CodenamesTeamSetup({ onJoinTeam, onLeaveTeam, onStart, onTimerToggle }: CodenamesTeamSetupProps) {
-  const { players, currentPlayerId, timerEnabled } = useCodenamesStore();
+  const { players, currentPlayerId, timerEnabled, pinkTeamName, blueTeamName } = useCodenamesStore();
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const isHost = currentPlayer?.isHost ?? false;
   const canStart = useCodenamesStore.getState().canStartGame();
+
+  // Local team name state (synced on blur/submit)
+  const [localPinkName, setLocalPinkName] = useState(pinkTeamName);
+  const [localBlueName, setLocalBlueName] = useState(blueTeamName);
 
   const getTeamRolePlayers = (team: TeamColor, role: PlayerRole) =>
     players.filter(p => p.team === team && p.role === role);
 
   const isInSlot = (team: TeamColor, role: PlayerRole) =>
     currentPlayer?.team === team && currentPlayer?.role === role;
+
+  const iAmSpymaster = currentPlayer?.role === 'spymaster';
+  const myTeam = currentPlayer?.team;
 
   const handleJoin = (team: TeamColor, role: PlayerRole) => {
     if (isInSlot(team, role)) {
@@ -31,6 +39,16 @@ export default function CodenamesTeamSetup({ onJoinTeam, onLeaveTeam, onStart, o
       if (onJoinTeam) onJoinTeam(team, role);
       else useCodenamesStore.getState().setPlayerTeamRole(currentPlayerId!, team, role);
     }
+  };
+
+  const handleTeamNameChange = (team: TeamColor, value: string) => {
+    if (team === 'pink') setLocalPinkName(value);
+    else setLocalBlueName(value);
+  };
+
+  const handleTeamNameBlur = (team: TeamColor) => {
+    const val = team === 'pink' ? localPinkName.trim() : localBlueName.trim();
+    useCodenamesStore.getState().setTeamName(team, val);
   };
 
   const renderSlot = (team: TeamColor, role: PlayerRole, maxSlots: number) => {
@@ -62,6 +80,9 @@ export default function CodenamesTeamSetup({ onJoinTeam, onLeaveTeam, onStart, o
     );
   };
 
+  // Check if current player is a spymaster on a specific team (can edit that team's name)
+  const canEditTeamName = (team: TeamColor) => iAmSpymaster && myTeam === team;
+
   return (
     <div className="cn-setup-layout">
       <div className="cn-setup-header">
@@ -77,7 +98,19 @@ export default function CodenamesTeamSetup({ onJoinTeam, onLeaveTeam, onStart, o
         <div className="cn-team-column pink">
           <div className="cn-team-column-header">
             <img src="/codenames/pink-team-icon.png" alt="Pink" />
-            <span className="cn-team-title pink">Pink Team</span>
+            {canEditTeamName('pink') ? (
+              <input
+                type="text"
+                className="cn-team-name-input pink"
+                value={localPinkName}
+                onChange={(e) => handleTeamNameChange('pink', e.target.value)}
+                onBlur={() => handleTeamNameBlur('pink')}
+                maxLength={20}
+                placeholder="Team name..."
+              />
+            ) : (
+              <span className="cn-team-title pink">{pinkTeamName}</span>
+            )}
           </div>
           {renderSlot('pink', 'spymaster', 2)}
           {renderSlot('pink', 'operative', 7)}
@@ -87,7 +120,19 @@ export default function CodenamesTeamSetup({ onJoinTeam, onLeaveTeam, onStart, o
         <div className="cn-team-column blue">
           <div className="cn-team-column-header">
             <img src="/codenames/blue-team-icon.png" alt="Blue" />
-            <span className="cn-team-title blue">Blue Team</span>
+            {canEditTeamName('blue') ? (
+              <input
+                type="text"
+                className="cn-team-name-input blue"
+                value={localBlueName}
+                onChange={(e) => handleTeamNameChange('blue', e.target.value)}
+                onBlur={() => handleTeamNameBlur('blue')}
+                maxLength={20}
+                placeholder="Team name..."
+              />
+            ) : (
+              <span className="cn-team-title blue">{blueTeamName}</span>
+            )}
           </div>
           {renderSlot('blue', 'spymaster', 2)}
           {renderSlot('blue', 'operative', 7)}

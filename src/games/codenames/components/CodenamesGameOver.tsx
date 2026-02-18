@@ -7,11 +7,12 @@ interface CodenamesGameOverProps {
 }
 
 export default function CodenamesGameOver({ onPlayAgain, onBackToLobby }: CodenamesGameOverProps) {
-  const { board, winner, winReason } = useCodenamesStore();
+  const { board, winner, winReason, pinkTeamName, blueTeamName } = useCodenamesStore();
 
-  const winnerLabel = winner === 'pink' ? 'Pink Team' : 'Blue Team';
+  const winnerLabel = winner === 'pink' ? pinkTeamName : blueTeamName;
+  const loserLabel = winner === 'pink' ? blueTeamName : pinkTeamName;
   const reasonText = winReason === 'assassin'
-    ? `The ${winner === 'pink' ? 'blue' : 'pink'} team hit the assassin!`
+    ? `${loserLabel} hit the assassin!`
     : `${winnerLabel} found all their cards!`;
 
   return (

@@ -19,6 +19,8 @@ export default function CodenamesClueBar({ onSubmitClue, onEndTurn }: CodenamesC
     timerEnabled,
     timeRemaining,
     board,
+    pinkTeamName,
+    blueTeamName,
   } = useCodenamesStore();
 
   const currentPlayer = useCodenamesStore.getState().getCurrentPlayer();
@@ -133,7 +135,7 @@ export default function CodenamesClueBar({ onSubmitClue, onEndTurn }: CodenamesC
     return (
       <div className="cn-clue-bar">
         <div className="cn-waiting">
-          Waiting for <span className={currentTeam}>{currentTeam}</span> spymaster to give a clue...
+          Waiting for <span className={currentTeam}>{currentTeam === 'pink' ? pinkTeamName : blueTeamName}</span> spymaster to give a clue...
         </div>
         {timerEnabled && timeRemaining > 0 && (
           <div className="cn-timer">{formatTime(timeRemaining)}</div>

@@ -244,19 +244,19 @@
   top: 3px;
   left: 3px;
   display: flex;
-  gap: 2px;
+  gap: 3px;
   z-index: 5;
   flex-wrap: wrap;
-  max-width: 60%;
+  max-width: 80%;
 }
 
 .cn-vote-bubble {
-  width: 20px;
-  height: 20px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2px solid #fff;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .cn-vote-bubble img {
@@ -698,8 +698,8 @@
   }
 
   .cn-vote-bubble {
-    width: 16px;
-    height: 16px;
+    width: 32px;
+    height: 32px;
   }
 
   .cn-lock-btn {
@@ -737,4 +737,91 @@
   .cn-board {
     gap: 3px;
   }
+}
+
+/* ====== CLUE HISTORY ====== */
+.cn-clue-history {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.cn-clue-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cn-clue-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  border-left: 3px solid transparent;
+}
+
+.cn-clue-history-item.pink {
+  border-left-color: #ff95da;
+}
+
+.cn-clue-history-item.blue {
+  border-left-color: #57abfd;
+}
+
+.cn-clue-history-word {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.cn-clue-history-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ====== TEAM NAME INPUT ====== */
+.cn-team-name-input {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  color: var(--text-primary);
+  width: 140px;
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.cn-team-name-input:focus {
+  outline: none;
+}
+
+.cn-team-name-input.pink:focus {
+  border-color: #ff95da;
+  color: #ff95da;
+}
+
+.cn-team-name-input.blue:focus {
+  border-color: #57abfd;
+  color: #57abfd;
+}
+
+.cn-team-name-input.pink {
+  color: #ff95da;
+}
+
+.cn-team-name-input.blue {
+  color: #57abfd;
 }

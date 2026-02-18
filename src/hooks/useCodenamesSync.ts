@@ -42,6 +42,7 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
           winner, winReason,
           timerEnabled, timeRemaining,
           players,
+          pinkTeamName, blueTeamName,
         } = payload as {
           phase: CodenamesPhase;
           board: CodenamesCard[];
@@ -57,6 +58,8 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
           timerEnabled: boolean;
           timeRemaining: number;
           players: CodenamesPlayer[];
+          pinkTeamName?: string;
+          blueTeamName?: string;
         };
 
         store.setState({
@@ -66,14 +69,24 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
           winner, winReason,
           timerEnabled, timeRemaining,
           players,
+          ...(pinkTeamName !== undefined && { pinkTeamName }),
+          ...(blueTeamName !== undefined && { blueTeamName }),
         });
       });
 
       // Team role updates during setup
       channel.on('broadcast', { event: 'cn_team_update' }, ({ payload }) => {
         if (!payload) return;
-        const { players } = payload as { players: CodenamesPlayer[] };
-        store.setState({ players });
+        const { players, pinkTeamName, blueTeamName } = payload as {
+          players: CodenamesPlayer[];
+          pinkTeamName?: string;
+          blueTeamName?: string;
+        };
+        store.setState({
+          players,
+          ...(pinkTeamName !== undefined && { pinkTeamName }),
+          ...(blueTeamName !== undefined && { blueTeamName }),
+        });
       });
 
       // Timer toggle
@@ -135,11 +148,12 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
           role: PlayerRole;
         };
         store.getState().setPlayerTeamRole(pid, team, role);
-        // Broadcast updated player list
+        // Broadcast updated player list + team names
+        const s = store.getState();
         channel.send({
           type: 'broadcast',
           event: 'cn_team_update',
-          payload: { players: store.getState().players },
+          payload: { players: s.players, pinkTeamName: s.pinkTeamName, blueTeamName: s.blueTeamName },
         });
       });
 
@@ -147,10 +161,11 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
         if (!payload) return;
         const { playerId: pid } = payload as { playerId: string };
         store.getState().clearPlayerTeamRole(pid);
+        const s = store.getState();
         channel.send({
           type: 'broadcast',
           event: 'cn_team_update',
-          payload: { players: store.getState().players },
+          payload: { players: s.players, pinkTeamName: s.pinkTeamName, blueTeamName: s.blueTeamName },
         });
       });
 
@@ -262,6 +277,8 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
             timerEnabled: s.timerEnabled,
             timeRemaining: s.timeRemaining,
             players: s.players,
+            pinkTeamName: s.pinkTeamName,
+            blueTeamName: s.blueTeamName,
           },
         });
       });
@@ -305,16 +322,23 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
         timerEnabled: s.timerEnabled,
         timeRemaining: s.timeRemaining,
         players: s.players,
+        pinkTeamName: s.pinkTeamName,
+        blueTeamName: s.blueTeamName,
       },
     });
   }, [isHost]);
 
   const broadcastTeamUpdate = useCallback(() => {
     if (!channelRef.current || !isHost) return;
+    const s = store.getState();
     channelRef.current.send({
       type: 'broadcast',
       event: 'cn_team_update',
-      payload: { players: store.getState().players },
+      payload: {
+        players: s.players,
+        pinkTeamName: s.pinkTeamName,
+        blueTeamName: s.blueTeamName,
+      },
     });
   }, [isHost]);
 

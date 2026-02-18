@@ -163,15 +163,6 @@ export default function CodenamesGameWrapper() {
     if (!currentPlayerId) return;
     const card = cn.board[cardIndex];
     if (!card || card.isRevealed) return;
-
-    // Toggle vote
-    const hasVote = card.votes.some(v => v.playerId === currentPlayerId);
-    if (hasVote) {
-      // Unvote — clicking same card again
-      if (isHost) {
-        cn.unvoteCard(currentPlayerId, cardIndex);
-      }
-    }
     sendVoteCard(cardIndex);
   };
 
@@ -197,6 +188,8 @@ export default function CodenamesGameWrapper() {
       clueHistory: [],
       winner: null,
       winReason: null,
+      pinkTeamName: 'Pink Team',
+      blueTeamName: 'Blue Team',
     });
     broadcastGameState();
   };
@@ -236,7 +229,7 @@ export default function CodenamesGameWrapper() {
         <div className={`cn-clue-announce-overlay ${clueVisible ? 'visible' : 'fading'}`}>
           <div className={`cn-clue-announce ${announcedClue.team}`}>
             <div className="cn-clue-announce-label">
-              {announcedClue.team === 'pink' ? 'Pink' : 'Blue'} Spymaster says:
+              {announcedClue.team === 'pink' ? cn.pinkTeamName : cn.blueTeamName} Spymaster says:
             </div>
             <div className={`cn-clue-announce-word ${announcedClue.team}`}>
               {announcedClue.word}
@@ -254,8 +247,8 @@ export default function CodenamesGameWrapper() {
           <div className={`cn-turn-dot ${cn.currentTeam}`} />
           <span>
             {cn.phase === 'spymaster-clue'
-              ? `${cn.currentTeam === 'pink' ? 'Pink' : 'Blue'} Spymaster's Turn`
-              : `${cn.currentTeam === 'pink' ? 'Pink' : 'Blue'} Team Guessing`}
+              ? `${cn.currentTeam === 'pink' ? cn.pinkTeamName : cn.blueTeamName} — Spymaster's Turn`
+              : `${cn.currentTeam === 'pink' ? cn.pinkTeamName : cn.blueTeamName} — Guessing`}
           </span>
         </div>
         <div className="cn-score-display">

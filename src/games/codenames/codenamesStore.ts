@@ -39,6 +39,9 @@ export interface CodenamesGameState {
   winner: TeamColor | null;
   winReason: 'cards' | 'assassin' | null;
 
+  pinkTeamName: string;
+  blueTeamName: string;
+
   timerEnabled: boolean;
   timeRemaining: number;
   clueTime: number;
@@ -63,6 +66,9 @@ interface CodenamesActions {
   unvoteCard: (playerId: string, cardIndex: number) => void;
   lockCard: (playerId: string, cardIndex: number) => CardType | null;
   endTurn: () => void;
+
+  // Team names
+  setTeamName: (team: TeamColor, name: string) => void;
 
   // Timer
   setTimerEnabled: (enabled: boolean) => void;
@@ -95,6 +101,8 @@ const initialState: CodenamesGameState = {
   blueRemaining: 0,
   winner: null,
   winReason: null,
+  pinkTeamName: 'Pink Team',
+  blueTeamName: 'Blue Team',
   timerEnabled: false,
   timeRemaining: 0,
   clueTime: CLUE_TIME,
@@ -184,34 +192,24 @@ const useCodenamesStore = create<CodenamesGameState & CodenamesActions>((set, ge
   },
 
   voteCard: (playerId, cardIndex) => {
-    set((s) => ({
-      board: s.board.map((c, i) => {
-        if (i !== cardIndex || c.isRevealed) return c;
-        // Remove vote from any other card first
-        const withoutVote = s.board.map(card => ({
-          ...card,
-          votes: card.votes.filter(v => v.playerId !== playerId),
-        }));
-        // Add vote to this card
-        const player = s.players.find(p => p.id === playerId);
-        if (!player) return c;
-        return {
-          ...withoutVote[i],
-          votes: [...withoutVote[i].votes, { playerId, avatarFilename: player.avatarFilename }],
-        };
-      }),
-    }));
-
-    // Cleaner approach: remove from all, add to target
+    // Toggle vote on the specific card only (allows multi-card voting)
     const state = get();
+    const card = state.board[cardIndex];
+    if (!card || card.isRevealed) return;
+
     const player = state.players.find(p => p.id === playerId);
     if (!player) return;
+
+    const hasVote = card.votes.some(v => v.playerId === playerId);
     const newBoard = state.board.map((c, i) => {
-      const filteredVotes = c.votes.filter(v => v.playerId !== playerId);
-      if (i === cardIndex && !c.isRevealed) {
-        return { ...c, votes: [...filteredVotes, { playerId, avatarFilename: player.avatarFilename }] };
+      if (i !== cardIndex) return c;
+      if (hasVote) {
+        // Remove vote (toggle off)
+        return { ...c, votes: c.votes.filter(v => v.playerId !== playerId) };
+      } else {
+        // Add vote (toggle on)
+        return { ...c, votes: [...c.votes, { playerId, avatarFilename: player.avatarFilename }] };
       }
-      return { ...c, votes: filteredVotes };
     });
     set({ board: newBoard });
   },
@@ -317,6 +315,12 @@ const useCodenamesStore = create<CodenamesGameState & CodenamesActions>((set, ge
       timeRemaining: s.timerEnabled ? s.clueTime : 0,
       board: s.board.map(c => ({ ...c, votes: [] })),
     });
+  },
+
+  // --- Team names ---
+  setTeamName: (team, name) => {
+    if (team === 'pink') set({ pinkTeamName: name || 'Pink Team' });
+    else set({ blueTeamName: name || 'Blue Team' });
   },
 
   // --- Timer ---
