@@ -113,8 +113,8 @@ export default function CreateRoom() {
           <label className="text-secondary mb-1" style={{ display: 'block', fontSize: '0.9rem' }}>
             Choose Avatar
           </label>
-          <div style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden', padding: '4px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'hidden', padding: '4px' }}>
+            <div className="avatar-grid">
               {avatars.map((avatar) => (
                 <button
                   key={avatar.id}
