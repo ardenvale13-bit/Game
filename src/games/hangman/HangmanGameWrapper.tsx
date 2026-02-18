@@ -40,6 +40,7 @@ export default function HangmanGameWrapper() {
     broadcastGameState,
     broadcastSetWord,
     broadcastGuessLetter,
+    broadcastGuessResult,
     broadcastRoundEnd,
     broadcastGameOver,
   } = useHangmanSync({
@@ -143,20 +144,24 @@ export default function HangmanGameWrapper() {
   // --- Handlers for child components ---
 
   const handleSetWord = (word: string, category: string) => {
+    useHangmanStore.getState().setWord(word, category);
     if (isHost) {
-      useHangmanStore.getState().setWord(word, category);
+      // Host is the picker — broadcast new guessing state to all players
+      setTimeout(() => broadcastGameState(), 50);
     } else {
+      // Non-host picker — send word to host (host will broadcast to everyone)
       broadcastSetWord(word, category);
-      useHangmanStore.getState().setWord(word, category);
     }
   };
 
   const handleGuessLetter = (letter: string) => {
     if (isHost) {
+      // Host processes locally then broadcasts result to all
       useHangmanStore.getState().guessLetter(letter, currentPlayerId!);
+      setTimeout(() => broadcastGuessResult(), 50);
     } else {
+      // Non-host sends request to host — host processes and broadcasts
       broadcastGuessLetter(letter);
-      useHangmanStore.getState().guessLetter(letter, currentPlayerId!);
     }
   };
 

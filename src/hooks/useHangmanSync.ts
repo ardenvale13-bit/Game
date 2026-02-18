@@ -62,27 +62,15 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
         });
       });
 
-      // Word is set by picker
-      channel.on('broadcast', { event: 'hm_word_set' }, ({ payload }) => {
+      // Guess result from host (letter was processed by host)
+      channel.on('broadcast', { event: 'hm_guess_result' }, ({ payload }) => {
         if (!payload) return;
-        const { word, category } = payload as { word: string; category: string };
-        store.setState({
-          secretWord: word,
-          category,
-          phase: 'guessing',
-          guessedLetters: [],
-          wrongGuesses: 0,
-        });
-      });
-
-      // Letter guessed
-      channel.on('broadcast', { event: 'hm_letter_guessed' }, ({ payload }) => {
-        if (!payload) return;
-        const { guessedLetters, wrongGuesses, scores } = payload as {
-          letter: string;
+        const { guessedLetters, wrongGuesses, scores, phase, winner } = payload as {
           guessedLetters: string[];
           wrongGuesses: number;
           scores: Record<string, number>;
+          phase: string;
+          winner: string | null;
         };
 
         const players = store.getState().players.map((p) => ({
@@ -94,6 +82,8 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
           guessedLetters,
           wrongGuesses,
           players,
+          phase: phase as HangmanPhase,
+          winner,
         });
       });
 
@@ -207,12 +197,42 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
         if (!payload) return;
         const { word, category } = payload as { word: string; category: string };
         store.getState().setWord(word, category);
+        // Broadcast new state (now in 'guessing') to all non-host players
+        const state = store.getState();
+        channel.send({
+          type: 'broadcast',
+          event: 'hm_game_state',
+          payload: {
+            phase: state.phase,
+            currentPickerIndex: state.currentPickerIndex,
+            secretWord: state.secretWord,
+            category: state.category,
+            guessedLetters: state.guessedLetters,
+            wrongGuesses: state.wrongGuesses,
+            currentRound: state.currentRound,
+          },
+        });
       });
 
-      // Player guesses letter
-      channel.on('broadcast', { event: 'hm_letter_guessed' }, ({ payload }) => {
+      // Non-host player requests a letter guess — host processes and broadcasts result
+      channel.on('broadcast', { event: 'hm_guess_request' }, ({ payload }) => {
         if (!payload) return;
-        // Note: the actual letter is already processed in the non-host listeners
+        const { letter, senderId } = payload as { letter: string; senderId: string };
+        store.getState().guessLetter(letter, senderId);
+        const state = store.getState();
+        const scores: Record<string, number> = {};
+        state.players.forEach((p) => { scores[p.id] = p.score; });
+        channel.send({
+          type: 'broadcast',
+          event: 'hm_guess_result',
+          payload: {
+            guessedLetters: state.guessedLetters,
+            wrongGuesses: state.wrongGuesses,
+            scores,
+            phase: state.phase,
+            winner: state.winner,
+          },
+        });
       });
 
       // Respond to state requests from newly connected clients
@@ -301,16 +321,36 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
     });
   }, [playerId]);
 
-  // Non-host player guesses letter to host
+  // Non-host player sends guess request to host
   const broadcastGuessLetter = useCallback((letter: string) => {
     const channel = channelRef.current;
     if (!channel || !playerId) return;
     channel.send({
       type: 'broadcast',
-      event: 'hm_letter_guessed',
+      event: 'hm_guess_request',
       payload: { letter, senderId: playerId },
     });
   }, [playerId]);
+
+  // Host broadcasts guess result after processing locally
+  const broadcastGuessResult = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel || !isHost) return;
+    const state = store.getState();
+    const scores: Record<string, number> = {};
+    state.players.forEach((p) => { scores[p.id] = p.score; });
+    channel.send({
+      type: 'broadcast',
+      event: 'hm_guess_result',
+      payload: {
+        guessedLetters: state.guessedLetters,
+        wrongGuesses: state.wrongGuesses,
+        scores,
+        phase: state.phase,
+        winner: state.winner,
+      },
+    });
+  }, [isHost]);
 
   // Host broadcasts round result
   const broadcastRoundEnd = useCallback((phase: HangmanPhase, winner: string) => {
@@ -363,6 +403,7 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
     broadcastGameState,
     broadcastSetWord,
     broadcastGuessLetter,
+    broadcastGuessResult,
     broadcastRoundEnd,
     broadcastNextRound,
     broadcastGameOver,

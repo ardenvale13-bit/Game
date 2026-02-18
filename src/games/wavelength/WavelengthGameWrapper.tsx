@@ -27,6 +27,7 @@ export default function WavelengthGameWrapper() {
 
   // Sync hook
   const {
+    broadcastGameState,
     sendJoinTeam,
     sendLeaveTeam,
     sendSubmitClue,
@@ -71,14 +72,14 @@ export default function WavelengthGameWrapper() {
       }, 300);
       revealTimeoutRef.current = timeout;
 
-      // Auto-advance after 5 seconds in reveal phase
-      const advanceTimeout = setTimeout(() => {
+      // Auto-advance after 5 seconds in reveal phase (host only)
+      const advanceTimeout = isHost ? setTimeout(() => {
         sendAdvanceRound();
-      }, 5000);
+      }, 5000) : null;
 
       return () => {
         clearTimeout(timeout);
-        clearTimeout(advanceTimeout);
+        if (advanceTimeout) clearTimeout(advanceTimeout);
       };
     }
   }, [wl.phase]);
@@ -108,6 +109,8 @@ export default function WavelengthGameWrapper() {
             onStart={() => {
               if (isHost) {
                 wl.startGame();
+                // Broadcast new game state (psychic-clue phase) to all non-host players
+                setTimeout(() => broadcastGameState(), 100);
               }
             }}
           />
