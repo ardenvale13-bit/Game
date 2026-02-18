@@ -22,14 +22,20 @@ export default function PlayerList() {
             } : {}}
           >
             {/* Rank indicator */}
-            <div style={{ 
-              width: '24px', 
+            <div style={{
+              width: '24px',
               textAlign: 'center',
               fontWeight: 700,
               color: index === 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
               fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
-              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
+              {index === 0 ? <img src="/first-icon.png" alt="1st" style={{ width: '22px', height: '22px' }} />
+                : index === 1 ? <img src="/second-icon.png" alt="2nd" style={{ width: '22px', height: '22px' }} />
+                : index === 2 ? <img src="/third-icon.png" alt="3rd" style={{ width: '22px', height: '22px' }} />
+                : `${index + 1}`}
             </div>
 
             {/* Avatar */}
@@ -61,8 +67,8 @@ export default function PlayerList() {
                 {isCurrentPlayer && <span className="text-muted"> (you)</span>}
               </div>
               {isDrawing && (
-                <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)' }}>
-                  ✏️ Drawing
+                <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <img src="/pencil.png" alt="" style={{ width: '14px', height: '14px' }} /> Drawing
                 </div>
               )}
               {player.hasGuessedCorrectly && !isDrawing && (

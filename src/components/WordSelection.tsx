@@ -26,12 +26,14 @@ export default function WordSelection({ onSelectWord }: WordSelectionProps) {
     }
   };
 
+  const starIcon = <img src="/star-icon.png" alt="★" style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} />;
+
   const getDifficultyLabel = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return '⭐';
-      case 'medium': return '⭐⭐';
-      case 'hard': return '⭐⭐⭐';
-      default: return '';
+      case 'easy': return <>{starIcon}</>;
+      case 'medium': return <>{starIcon}{starIcon}</>;
+      case 'hard': return <>{starIcon}{starIcon}{starIcon}</>;
+      default: return null;
     }
   };
 
@@ -44,7 +46,7 @@ export default function WordSelection({ onSelectWord }: WordSelectionProps) {
       justifyContent: 'center',
       minHeight: '400px',
     }}>
-      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎨</div>
+      <img src="/palette-icon.png" alt="" style={{ width: '64px', height: '64px', marginBottom: '16px' }} />
       <h2 className="mb-2">Choose a word to draw!</h2>
       <p className="text-muted mb-4">
         Pick wisely - harder words give more points when guessed!

@@ -588,7 +588,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
             borderRadius: 'var(--radius-lg)',
           }}>
             <div style={{ textAlign: 'center', color: 'white' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎨</div>
+              <img src="/palette-icon.png" alt="" style={{ width: '64px', height: '64px', marginBottom: '16px' }} />
               <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>
                 Waiting for word selection...
               </div>
@@ -609,7 +609,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
               title="Undo (Ctrl+Z)"
               style={{ opacity: undoStack.length === 0 ? 0.4 : 1 }}
             >
-              ↩️
+              <img src="/undo.png" alt="Undo" style={{ width: '20px', height: '20px' }} />
             </button>
             <button
               className="tool-btn"
@@ -618,7 +618,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
               title="Redo (Ctrl+Y)"
               style={{ opacity: redoStack.length === 0 ? 0.4 : 1 }}
             >
-              ↪️
+              <img src="/redo.png" alt="Redo" style={{ width: '20px', height: '20px' }} />
             </button>
           </div>
 

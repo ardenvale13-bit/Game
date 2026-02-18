@@ -77,7 +77,8 @@ export default function ChatPanel({
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         fontWeight: 600,
       }}>
-        💬 Guesses
+        <img src="/guesses-icon.png" alt="" style={{ width: '20px', height: '20px', verticalAlign: 'middle', marginRight: '6px' }} />
+        Guesses
       </div>
 
       {/* Messages */}

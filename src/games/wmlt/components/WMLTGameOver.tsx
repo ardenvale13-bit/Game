@@ -32,10 +32,11 @@ export default function WMLTGameOver({ onPlayAgain, onBackToLobby }: WMLTGameOve
       <div className="wmlt-podium">
         {top3.map((player, i) => {
           const rank = i === 0 ? 'first' : i === 1 ? 'second' : 'third';
-          const emoji = i === 0 ? '👑' : i === 1 ? '🥈' : '🥉';
+          const medalSrc = i === 0 ? '/first-icon.png' : i === 1 ? '/second-icon.png' : '/third-icon.png';
+          const glowColor = i === 0 ? 'rgba(255, 215, 0, 0.5)' : i === 1 ? 'rgba(192, 192, 192, 0.5)' : 'rgba(205, 127, 50, 0.5)';
           return (
-            <div key={player.id} className={`wmlt-podium-spot ${rank}`}>
-              <div className="wmlt-podium-rank">{emoji}</div>
+            <div key={player.id} className={`wmlt-podium-spot ${rank}`} style={{ boxShadow: `0 0 20px ${glowColor}` }}>
+              <div className="wmlt-podium-rank"><img src={medalSrc} alt={rank} style={{ width: '36px', height: '36px' }} /></div>
               <div className="wmlt-podium-avatar">
                 <img src={`/avatars/${player.avatarFilename}`} alt={player.name} />
               </div>

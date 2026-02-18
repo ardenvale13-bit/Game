@@ -10,12 +10,21 @@ export default function GameOver({ onPlayAgain, onLeave }: GameOverProps) {
   const leaderboard = getLeaderboard();
   const winner = leaderboard[0];
 
-  const getMedalEmoji = (index: number) => {
+  const getMedalIcon = (index: number) => {
     switch (index) {
-      case 0: return '🥇';
-      case 1: return '🥈';
-      case 2: return '🥉';
+      case 0: return <img src="/first-icon.png" alt="1st" style={{ width: '28px', height: '28px' }} />;
+      case 1: return <img src="/second-icon.png" alt="2nd" style={{ width: '28px', height: '28px' }} />;
+      case 2: return <img src="/third-icon.png" alt="3rd" style={{ width: '28px', height: '28px' }} />;
       default: return `${index + 1}.`;
+    }
+  };
+
+  const getPlaceGlow = (index: number): React.CSSProperties => {
+    switch (index) {
+      case 0: return { borderColor: '#FFD700', boxShadow: '0 0 12px rgba(255, 215, 0, 0.4)' };
+      case 1: return { borderColor: '#C0C0C0', boxShadow: '0 0 12px rgba(192, 192, 192, 0.4)' };
+      case 2: return { borderColor: '#CD7F32', boxShadow: '0 0 12px rgba(205, 127, 50, 0.4)' };
+      default: return {};
     }
   };
 
@@ -60,21 +69,27 @@ export default function GameOver({ onPlayAgain, onLeave }: GameOverProps) {
           <h3 className="mb-2">Final Standings</h3>
           <div className="flex flex-col gap-1">
             {leaderboard.map((player, index) => (
-              <div 
-                key={player.id} 
+              <div
+                key={player.id}
                 className="player-card"
-                style={player.id === currentPlayerId ? { 
-                  borderColor: 'var(--accent-tertiary)',
-                  borderWidth: '2px',
-                } : {}}
+                style={{
+                  ...(player.id === currentPlayerId ? {
+                    borderColor: 'var(--accent-tertiary)',
+                    borderWidth: '2px',
+                  } : {}),
+                  ...getPlaceGlow(index),
+                }}
               >
-                <div style={{ 
-                  width: '32px', 
+                <div style={{
+                  width: '32px',
                   textAlign: 'center',
                   fontWeight: 700,
                   fontSize: index < 3 ? '1.2rem' : '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}>
-                  {getMedalEmoji(index)}
+                  {getMedalIcon(index)}
                 </div>
                 <div className="avatar">
                   <img 
