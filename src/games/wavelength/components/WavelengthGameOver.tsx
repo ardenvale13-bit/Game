@@ -1,12 +1,10 @@
 // Wavelength — Game Over Screen
 import { useNavigate } from 'react-router-dom';
 import useWavelengthStore from '../wavelengthStore';
-import useLobbyStore from '../../../store/lobbyStore';
 
 export default function WavelengthGameOver() {
   const navigate = useNavigate();
   const { winner, pinkScore, blueScore, players, currentPlayerId } = useWavelengthStore();
-  const _lobbyStore = useLobbyStore();
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const playerWon = currentPlayer?.team === winner;
 
