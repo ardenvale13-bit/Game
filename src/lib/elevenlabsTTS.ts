@@ -5,13 +5,12 @@ const API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
 const VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Default: "Adam" — deep male voice
 const MODEL_ID = import.meta.env.VITE_ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
 
-// Debug: log config state on load
-console.log('[ElevenLabs] Config loaded:', {
-  hasApiKey: !!API_KEY,
-  keyPrefix: API_KEY ? API_KEY.substring(0, 8) + '...' : '(empty)',
-  voiceId: VOICE_ID,
-  modelId: MODEL_ID,
-});
+// Debug: log config state on load (explicit strings so they don't collapse in console)
+console.log('[ElevenLabs] hasApiKey:', !!API_KEY, '| keyLength:', API_KEY.length, '| voiceId:', VOICE_ID, '| modelId:', MODEL_ID);
+if (!API_KEY) {
+  console.warn('[ElevenLabs] ⚠️ VITE_ELEVENLABS_API_KEY is empty! Make sure .env has the key and you rebuilt after saving.');
+  console.warn('[ElevenLabs] Raw env value:', JSON.stringify(import.meta.env.VITE_ELEVENLABS_API_KEY));
+}
 
 export const isElevenLabsConfigured = (): boolean => !!API_KEY;
 
