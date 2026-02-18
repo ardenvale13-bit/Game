@@ -7,6 +7,8 @@ import PictionaryGame from './PictionaryGame';
 import CAHGameWrapper from '../games/cah/CAHGameWrapper';
 import CodenamesGameWrapper from '../games/codenames/CodenamesGameWrapper';
 import WMLTGameWrapper from '../games/wmlt/WMLTGameWrapper';
+import HangmanGameWrapper from '../games/hangman/HangmanGameWrapper';
+import WavelengthGameWrapper from '../games/wavelength/WavelengthGameWrapper';
 
 export default function GameRouter() {
   const { game, roomCode } = useParams();
@@ -27,6 +29,10 @@ export default function GameRouter() {
       return <CodenamesGameWrapper />;
     case 'wmlt':
       return <WMLTGameWrapper />;
+    case 'hangman':
+      return <HangmanGameWrapper />;
+    case 'wavelength':
+      return <WavelengthGameWrapper />;
     default:
       return <Navigate to={`/lobby/${roomCode}`} replace />;
   }

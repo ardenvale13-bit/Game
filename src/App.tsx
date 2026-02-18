@@ -6,6 +6,8 @@ import Lobby from './pages/LobbyNew';
 import GameRouter from './pages/GameRouter';
 import './index.css';
 import './games/cah/cah.css';
+import './games/hangman/hangman.css';
+import './games/wavelength/wavelength.css';
 
 function App() {
   return (

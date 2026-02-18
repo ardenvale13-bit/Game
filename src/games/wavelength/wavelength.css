@@ -1,0 +1,1040 @@
+/* Wavelength — Styles */
+
+/* ====== LAYOUT ====== */
+.wl-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 12px;
+  background: var(--bg-primary);
+}
+
+.wl-container {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wl-game-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wl-reveal-layout {
+  justify-content: center;
+  align-items: center;
+}
+
+/* ====== HEADER ====== */
+.wl-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  gap: 16px;
+}
+
+.wl-round-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+}
+
+.wl-score-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.wl-score.pink {
+  color: #ff95da;
+}
+
+.wl-score.blue {
+  color: #57abfd;
+}
+
+.wl-score-sep {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* ====== TEAM SETUP ====== */
+.wl-team-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  align-items: center;
+}
+
+.wl-setup-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: var(--text-primary);
+}
+
+.wl-setup-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.wl-team-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.wl-team-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+}
+
+.wl-team-column.pink {
+  border-color: rgba(255, 149, 218, 0.3);
+}
+
+.wl-team-column.blue {
+  border-color: rgba(87, 171, 253, 0.3);
+}
+
+.wl-team-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wl-team-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.wl-team-header.pink h3 {
+  color: #ff95da;
+}
+
+.wl-team-header.blue h3 {
+  color: #57abfd;
+}
+
+.wl-team-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.wl-team-color-dot.pink {
+  background: #ff95da;
+}
+
+.wl-team-color-dot.blue {
+  background: #57abfd;
+}
+
+.wl-team-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.wl-roster-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.wl-roster-player.you {
+  background: var(--bg-card);
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.wl-roster-player img {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.wl-join-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wl-join-button:hover {
+  background: var(--bg-elevated);
+  transform: translateY(-1px);
+}
+
+.wl-join-button.active-pink {
+  background: #ff95da;
+  color: #1a0f1f;
+}
+
+.wl-join-button.active-blue {
+  background: #57abfd;
+  color: #0f1a2e;
+}
+
+.wl-team-count {
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.wl-unassigned {
+  width: 100%;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--text-secondary);
+}
+
+.wl-unassigned h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.wl-unassigned-players {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wl-unassigned-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+}
+
+.wl-unassigned-player.you {
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.wl-unassigned-player img {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+}
+
+.wl-start-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.wl-start-button.enabled:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(88, 171, 253, 0.3);
+}
+
+.wl-start-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  font-size: 0.8rem;
+}
+
+/* ====== DIAL COMPONENT ====== */
+.wl-dial-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+}
+
+.wl-dial-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.wl-dial-label-left {
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.wl-dial-label-right {
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.wl-dial {
+  position: relative;
+  height: 60px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: default;
+  border: 2px solid var(--bg-card);
+}
+
+.wl-dial.interactive {
+  cursor: pointer;
+}
+
+.wl-dial-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(255, 149, 218, 0.3), rgba(87, 171, 253, 0.3));
+}
+
+.wl-dial-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-primary);
+  transform: translateX(-50%);
+  transition: left 0.05s ease;
+}
+
+.wl-dial-target-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #ffd700;
+  opacity: 0.8;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+
+.wl-dial-target-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 215, 0, 0.2);
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  opacity: 0.6;
+}
+
+.wl-dial-score-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  opacity: 0;
+}
+
+.wl-dial-score-zone.bullseye {
+  background: rgba(255, 215, 0, 0.15);
+}
+
+.wl-dial-score-zone.close {
+  background: rgba(0, 255, 0, 0.08);
+}
+
+.wl-dial-score-zone.near {
+  background: rgba(255, 170, 0, 0.04);
+}
+
+.wl-dial-position {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.wl-position-value {
+  font-size: 1.2rem;
+  color: var(--accent-primary);
+}
+
+/* ====== CLUE INPUT ====== */
+.wl-clue-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.wl-clue-role-badge {
+  display: inline-block;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 149, 218, 0.2));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  width: fit-content;
+}
+
+.wl-clue-spectrum-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wl-clue-spectrum-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.wl-clue-target-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-left: 4px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+}
+
+.wl-clue-target-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.wl-target-badge {
+  padding: 4px 8px;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.wl-clue-helper-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.wl-clue-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.wl-clue-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--bg-elevated);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  transition: border-color 0.2s ease;
+}
+
+.wl-clue-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.wl-clue-submit {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wl-clue-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(88, 171, 253, 0.3);
+}
+
+.wl-clue-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wl-clue-rules {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ====== TEAM GUESS ====== */
+.wl-guess-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.wl-clue-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent-primary);
+}
+
+.wl-clue-label {
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wl-clue-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-family: var(--font-display);
+}
+
+.wl-guess-submit {
+  padding: 14px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: center;
+}
+
+.wl-guess-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(88, 171, 253, 0.3);
+}
+
+/* ====== COUNTER GUESS ====== */
+.wl-counter-guess-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.wl-counter-role-badge {
+  display: inline-block;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(87, 171, 253, 0.2), rgba(255, 149, 218, 0.2));
+  border: 1px solid rgba(87, 171, 253, 0.3);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  width: fit-content;
+}
+
+.wl-counter-instruction {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.wl-counter-position {
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-size: 1.1rem;
+}
+
+.wl-counter-spectrum-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wl-counter-spectrum-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.wl-counter-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wl-counter-button {
+  padding: 16px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wl-counter-button.lower {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+  border: 2px solid #ff4444;
+}
+
+.wl-counter-button.lower:hover {
+  background: rgba(255, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.wl-counter-button.higher {
+  background: rgba(87, 171, 253, 0.2);
+  color: #57abfd;
+  border: 2px solid #57abfd;
+}
+
+.wl-counter-button.higher:hover {
+  background: rgba(87, 171, 253, 0.3);
+  transform: translateY(-2px);
+}
+
+.wl-counter-waiting {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.wl-counter-rules {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ====== WAITING STATE ====== */
+.wl-waiting-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  align-items: center;
+}
+
+.wl-waiting-role {
+  display: inline-block;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wl-waiting-message {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.wl-waiting-message p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.wl-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--bg-elevated);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ====== REVEAL PHASE ====== */
+.wl-reveal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 700px;
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wl-reveal-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.wl-reveal-section {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.wl-reveal-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wl-reveal-position {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.wl-reveal-accuracy {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.wl-reveal-accuracy.wl-accuracy-bullseye {
+  color: #ffd700;
+}
+
+.wl-reveal-accuracy.wl-accuracy-close {
+  color: #00ff00;
+}
+
+.wl-reveal-accuracy.wl-accuracy-near {
+  color: #ffaa00;
+}
+
+.wl-reveal-accuracy.wl-accuracy-miss {
+  color: #ff4444;
+}
+
+.wl-reveal-counter {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--accent-primary);
+}
+
+.wl-reveal-next {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ====== GAME OVER ====== */
+.wl-game-over {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.wl-game-over-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.wl-game-over-header {
+  display: flex;
+  justify-content: center;
+}
+
+.wl-game-over-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.2rem;
+  color: var(--text-primary);
+}
+
+.wl-game-over-title.won {
+  background: linear-gradient(135deg, #ffd700, #ff95da);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.wl-final-scores {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.wl-final-score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.wl-final-score-card.winner {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: scale(1.05);
+}
+
+.wl-team-name {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wl-final-score-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.wl-vs {
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  align-self: center;
+}
+
+.wl-final-result {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border-left: 4px solid transparent;
+}
+
+.wl-final-result.you-won {
+  border-left-color: #ffd700;
+}
+
+.wl-final-result.you-lost {
+  border-left-color: var(--text-secondary);
+}
+
+.wl-winner-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.wl-return-button {
+  padding: 14px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wl-return-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(88, 171, 253, 0.3);
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .wl-team-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .wl-game-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .wl-round-title {
+    font-size: 1.2rem;
+  }
+
+  .wl-score-display {
+    justify-content: center;
+  }
+
+  .wl-reveal-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .wl-counter-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .wl-final-scores {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .wl-vs {
+    display: none;
+  }
+
+  .wl-final-score-card.winner {
+    transform: scale(1);
+  }
+
+  .wl-game-over-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wl-wrapper {
+    padding: 8px;
+  }
+
+  .wl-container {
+    gap: 12px;
+  }
+
+  .wl-team-setup {
+    padding: 16px;
+  }
+
+  .wl-setup-title {
+    font-size: 1.4rem;
+  }
+
+  .wl-game-layout {
+    gap: 12px;
+  }
+
+  .wl-game-header {
+    padding: 12px;
+  }
+
+  .wl-round-title {
+    font-size: 1rem;
+  }
+
+  .wl-score-display {
+    font-size: 1rem;
+  }
+
+  .wl-dial-container {
+    padding: 16px;
+  }
+
+  .wl-clue-input-container,
+  .wl-guess-container,
+  .wl-counter-guess-container {
+    padding: 16px;
+  }
+
+  .wl-clue-input-group {
+    flex-direction: column;
+  }
+
+  .wl-clue-submit,
+  .wl-guess-submit {
+    width: 100%;
+  }
+
+  .wl-game-over-card {
+    padding: 16px;
+  }
+
+  .wl-game-over-title {
+    font-size: 1.6rem;
+  }
+}

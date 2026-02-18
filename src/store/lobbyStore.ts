@@ -10,7 +10,7 @@ export interface Player {
   score: number; // Persists across games in same session
 }
 
-export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | null;
+export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'hangman' | 'wavelength' | null;
 
 interface LobbyState {
   // Room
@@ -125,6 +125,8 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
     if (state.selectedGame === 'cah') return state.players.length >= 3;
     if (state.selectedGame === 'codenames') return state.players.length >= 4;
     if (state.selectedGame === 'wmlt') return state.players.length >= 3;
+    if (state.selectedGame === 'hangman') return state.players.length >= 2;
+    if (state.selectedGame === 'wavelength') return state.players.length >= 4;
     return state.players.length >= 2;
   },
 

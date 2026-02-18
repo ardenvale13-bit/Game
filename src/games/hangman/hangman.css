@@ -1,0 +1,665 @@
+/* Hangman Game - Styles */
+
+.hangman-layout {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Header */
+.hangman-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.hangman-round {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.hangman-wrong-count {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ff6b6b;
+}
+
+/* Container */
+.hangman-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  flex: 1;
+}
+
+.hangman-game-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+}
+
+/* Drawing Section */
+.hangman-drawing-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.hangman-drawing {
+  filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.3));
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 40px rgba(0, 240, 255, 0.5));
+  }
+}
+
+/* Word Display */
+.hangman-word-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.hangman-category {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hangman-word {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+}
+
+.hangman-letter {
+  width: 40px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 2px solid #00f0ff;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.hangman-word-length {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Keyboard */
+.hangman-keyboard-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.hangman-guess-prompt {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hangman-keyboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+  gap: 8px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.hangman-key {
+  padding: 10px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent-primary);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.hangman-key:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.hangman-key:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hangman-key.guessed {
+  background: var(--accent-primary);
+  color: #000;
+  border-color: #00f0ff;
+}
+
+/* Word Picker */
+.hangman-word-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--bg-elevated);
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  max-width: 500px;
+  width: 100%;
+}
+
+.hangman-word-picker h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 0;
+  color: #00f0ff;
+}
+
+.hangman-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.hangman-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hangman-picker-section h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.hangman-divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 12px 0;
+}
+
+.hangman-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hangman-form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.hangman-form-group input,
+.hangman-form-group select {
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.hangman-form-group input:focus,
+.hangman-form-group select:focus {
+  outline: none;
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.hangman-random-btn,
+.hangman-submit-btn {
+  padding: 12px 24px;
+  background: var(--accent-primary);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.hangman-random-btn:hover,
+.hangman-submit-btn:hover:not(:disabled) {
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.hangman-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Waiting States */
+.hangman-waiting,
+.hangman-picker-waiting,
+.hangman-waiting-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.hangman-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: #00f0ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.hangman-waiting p,
+.hangman-picker-waiting p,
+.hangman-waiting-picker p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Picker Status */
+.hangman-picker-status {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 2px solid #00f0ff;
+}
+
+.hangman-picker-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00f0ff;
+  text-align: center;
+}
+
+/* Players List */
+.hangman-players-list {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.hangman-players-list h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.hangman-players {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hangman-player-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.hangman-player-item.picker {
+  border-color: #00f0ff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.hangman-player-item.winner {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+}
+
+.hangman-player-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+}
+
+.hangman-player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hangman-player-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hangman-player-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hangman-picker-badge {
+  font-size: 0.75rem;
+  background: #00f0ff;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.hangman-player-score {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Round End */
+.hangman-round-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  max-width: 600px;
+  width: 100%;
+}
+
+.hangman-result {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 20px;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.hangman-result.won {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+
+.hangman-result.lost {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 2px solid #ff6b6b;
+}
+
+.hangman-result-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.hangman-secret-reveal {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.hangman-secret-reveal strong {
+  color: #00f0ff;
+  font-family: 'Courier New', monospace;
+}
+
+.hangman-round-winner {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 2px solid var(--accent-primary);
+}
+
+.hangman-winner-text {
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #00f0ff;
+}
+
+.hangman-winner-score {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.hangman-next-round-info {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Game Over */
+.hangman-game-over-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 40px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  max-width: 600px;
+  width: 100%;
+}
+
+.hangman-game-over-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #00f0ff;
+  text-align: center;
+  margin: 0;
+}
+
+.hangman-leaderboard {
+  width: 100%;
+}
+
+.hangman-leaderboard h2 {
+  font-size: 1.3rem;
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+}
+
+.hangman-leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hangman-leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.hangman-leaderboard-rank {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #00f0ff;
+  min-width: 40px;
+}
+
+.hangman-leaderboard-player {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hangman-leaderboard-player img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hangman-leaderboard-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hangman-leaderboard-score {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4CAF50;
+}
+
+.hangman-game-over-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.hangman-play-again-btn,
+.hangman-leave-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hangman-play-again-btn {
+  background: var(--accent-primary);
+  color: #000;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.hangman-play-again-btn:hover {
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.hangman-leave-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 2px solid var(--border-color);
+}
+
+.hangman-leave-btn:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hangman-layout {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .hangman-letter {
+    width: 36px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+
+  .hangman-keyboard {
+    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+    gap: 6px;
+  }
+
+  .hangman-key {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .hangman-game-over-title {
+    font-size: 2rem;
+  }
+
+  .hangman-word-picker {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hangman-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hangman-keyboard {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .hangman-drawing {
+    width: 250px;
+    height: 350px;
+  }
+
+  .hangman-game-over-actions {
+    flex-direction: column;
+  }
+}
