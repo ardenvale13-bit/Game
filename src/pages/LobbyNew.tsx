@@ -1,5 +1,5 @@
 // Unified Lobby - Game selection happens here (Multiplayer via Supabase Realtime)
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../store/lobbyStore';
 import type { GameType, Player } from '../store/lobbyStore';
@@ -33,15 +33,20 @@ export default function Lobby() {
 
   const hostPlayer = isHost();
 
-  // Build current player's presence data ONCE and keep it stable.
-  // This must NOT depend on the `players` array or it creates a loop:
-  // presence sync → setPlayers → players change → currentPlayer recalc → hook re-fires
-  const currentPlayerRef = useRef<PresencePlayer | null>(null);
-  if (!currentPlayerRef.current && currentPlayerId) {
-    // Initialize from the store (which was set during CreateRoom/JoinRoom)
-    const p = players.find(p => p.id === currentPlayerId);
+  // Build current player's presence data.
+  // Uses useState so that when it resolves (possibly after first render),
+  // it triggers a re-render and the realtime hook picks it up.
+  const [currentPresencePlayer, setCurrentPresencePlayer] = useState<PresencePlayer | null>(null);
+  const presenceInitRef = useRef(false);
+
+  useEffect(() => {
+    if (presenceInitRef.current || !currentPlayerId) return;
+
+    // Try from store first
+    const p = useLobbyStore.getState().players.find(p => p.id === currentPlayerId);
     if (p) {
-      currentPlayerRef.current = {
+      presenceInitRef.current = true;
+      setCurrentPresencePlayer({
         id: p.id,
         name: p.name,
         avatarId: p.avatarId,
@@ -49,23 +54,25 @@ export default function Lobby() {
         isHost: p.isHost,
         score: p.score,
         joinedAt: Date.now(),
-      };
-    } else {
-      // Fallback: try sessionStorage
-      const session = getPlayerSession();
-      if (session) {
-        currentPlayerRef.current = {
-          id: session.playerId,
-          name: session.name,
-          avatarId: session.avatarId,
-          avatarFilename: session.avatarFilename,
-          isHost: session.isHost,
-          score: 0,
-          joinedAt: Date.now(),
-        };
-      }
+      });
+      return;
     }
-  }
+
+    // Fallback: try sessionStorage
+    const session = getPlayerSession();
+    if (session) {
+      presenceInitRef.current = true;
+      setCurrentPresencePlayer({
+        id: session.playerId,
+        name: session.name,
+        avatarId: session.avatarId,
+        avatarFilename: session.avatarFilename,
+        isHost: session.isHost,
+        score: 0,
+        joinedAt: Date.now(),
+      });
+    }
+  }, [currentPlayerId, players]); // Re-run if players populate after first render
 
   // Sync player list from Presence
   const handlePlayersSync = useCallback((presencePlayers: PresencePlayer[]) => {
@@ -109,7 +116,7 @@ export default function Lobby() {
 
   const { isConnected, sendEvent } = useRealtimeRoom({
     roomCode: roomCode || null,
-    player: currentPlayerRef.current,
+    player: currentPresencePlayer,
     onPlayersSync: handlePlayersSync,
     onBroadcast: handleBroadcast,
   });

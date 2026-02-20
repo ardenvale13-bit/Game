@@ -126,13 +126,49 @@ export function useRealtimeRoom({
       onBroadcastRef.current?.(payload as BroadcastEvent);
     });
 
+    const trackPresence = async () => {
+      await channel.track({
+        id: player.id,
+        name: player.name,
+        avatarId: player.avatarId,
+        avatarFilename: player.avatarFilename,
+        isHost: player.isHost,
+        score: player.score,
+        joinedAt: player.joinedAt || Date.now(),
+      });
+
+      // NOW it's safe to process sync events
+      hasTrackedRef.current = true;
+
+      // Manually fire a sync now that we're tracked,
+      // so we pick up anyone who was already in the room
+      const state = channel.presenceState();
+      const syncedPlayers = parsePresenceState(state);
+      setPresencePlayers(syncedPlayers);
+      onPlayersSyncRef.current?.(syncedPlayers);
+    };
+
     channel
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
+          await trackPresence();
+        } else if (status === 'CHANNEL_ERROR') {
+          setIsConnected(false);
+          hasTrackedRef.current = false;
+        } else if (status === 'CLOSED') {
+          setIsConnected(false);
+          hasTrackedRef.current = false;
+        }
+      });
 
-          // Track our presence FIRST
-          await channel.track({
+    // Re-track presence periodically to survive silent disconnects.
+    // Supabase presence has a 30s heartbeat; we re-track every 25s
+    // so our presence never expires even if a sync was missed.
+    const heartbeatInterval = setInterval(async () => {
+      if (hasTrackedRef.current && channelRef.current) {
+        try {
+          await channelRef.current.track({
             id: player.id,
             name: player.name,
             avatarId: player.avatarId,
@@ -141,22 +177,16 @@ export function useRealtimeRoom({
             score: player.score,
             joinedAt: player.joinedAt || Date.now(),
           });
-
-          // NOW it's safe to process sync events
-          hasTrackedRef.current = true;
-
-          // Manually fire a sync now that we're tracked,
-          // so we pick up anyone who was already in the room
-          const state = channel.presenceState();
-          const players = parsePresenceState(state);
-          setPresencePlayers(players);
-          onPlayersSyncRef.current?.(players);
+        } catch {
+          // Silent fail — next heartbeat will retry
         }
-      });
+      }
+    }, 25000);
 
     channelRef.current = channel;
 
     return () => {
+      clearInterval(heartbeatInterval);
       hasTrackedRef.current = false;
       channel.unsubscribe();
       channelRef.current = null;
