@@ -36,6 +36,8 @@ export default function CAHGameWrapper() {
     submitCards,
     decrementTime,
     resetGame,
+    setMaxRounds,
+    swapCard,
   } = useCAHStore();
 
   const currentPlayer = cahPlayers.find(p => p.id === currentPlayerId);
@@ -53,6 +55,7 @@ export default function CAHGameWrapper() {
     broadcastSubmitCards,
     broadcastPickWinner,
     broadcastTTS,
+    broadcastSwapCard,
   } = useCAHSync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
@@ -69,6 +72,12 @@ export default function CAHGameWrapper() {
       const currentLobbyPlayer = useLobbyStore.getState().currentPlayerId;
       if (currentLobbyPlayer) setCurrentPlayer(currentLobbyPlayer);
 
+      // Set max rounds from lobby settings (default 10 if not CAH-specific)
+      const rc = useLobbyStore.getState().roundCount;
+      if (rc && [10, 15, 20, 25, 30].includes(rc)) {
+        setMaxRounds(rc);
+      }
+
       lobbyPlayers.forEach((p) => {
         addPlayer({
           id: p.id,
@@ -79,7 +88,7 @@ export default function CAHGameWrapper() {
         });
       });
     }
-  }, [lobbyPlayers, cahPlayers.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer]);
+  }, [lobbyPlayers, cahPlayers.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer, setMaxRounds]);
 
   // HOST: start game only AFTER the sync channel is confirmed connected
   useEffect(() => {
@@ -137,6 +146,7 @@ export default function CAHGameWrapper() {
   }, [phase, isHost]);
 
   // HOST: during reveal phase, auto-advance to next round after 5 seconds
+  // NOTE: broadcastRoundStart is handled by the useEffect that watches phase='playing' + currentRound
   useEffect(() => {
     if (!isHost || phase !== 'reveal') return;
 
@@ -147,10 +157,8 @@ export default function CAHGameWrapper() {
         broadcastGameOver();
       } else {
         nextRound();
-        // Explicitly broadcast after store settles with new czar
-        setTimeout(() => {
-          broadcastRoundStart();
-        }, 200);
+        // The round-start broadcast effect will fire automatically
+        // because nextRound() → startRound() sets phase='playing' with a new currentRound
       }
     }, 5000);
 
@@ -186,8 +194,8 @@ export default function CAHGameWrapper() {
               });
             } else {
               // No submissions at all — skip to next round
+              // broadcastRoundStart handled by the phase='playing' + currentRound watcher
               nextRound();
-              setTimeout(() => broadcastRoundStart(), 200);
             }
           } else if (state.phase === 'judging') {
             // Auto-pick random winner
@@ -256,11 +264,18 @@ export default function CAHGameWrapper() {
   // Pick winner (called from CAHJudging)
   const handlePickWinner = (winnerId: string) => {
     if (isHost) {
-      // Host picks locally
       selectWinner(winnerId);
     } else {
-      // Non-host czar broadcasts to host
       broadcastPickWinner(winnerId);
+    }
+  };
+
+  // Swap a card (called from CAHPlaying)
+  const handleSwapCard = (cardId: string) => {
+    if (isHost) {
+      swapCard(currentPlayerId!, cardId);
+    } else {
+      broadcastSwapCard(cardId);
     }
   };
 
@@ -289,6 +304,8 @@ export default function CAHGameWrapper() {
       return (
         <CAHPlaying
           onSubmitCards={handleSubmitCards}
+          onSwapCard={handleSwapCard}
+          onLeave={handleLeave}
           isHost={isHost}
         />
       );
@@ -298,16 +315,19 @@ export default function CAHGameWrapper() {
           onPickWinner={handlePickWinner}
           isHost={isHost}
           onReadAloud={broadcastTTS}
+          onLeave={handleLeave}
         />
       );
     case 'reveal':
-      return <CAHReveal />;
+      return <CAHReveal onLeave={handleLeave} />;
     case 'game-over':
       return <CAHGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />;
     default:
       return (
         <CAHPlaying
           onSubmitCards={handleSubmitCards}
+          onSwapCard={handleSwapCard}
+          onLeave={handleLeave}
           isHost={isHost}
         />
       );

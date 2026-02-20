@@ -4,10 +4,12 @@ import type { WhiteCard } from '../cardData';
 
 interface CAHPlayingProps {
   onSubmitCards?: (cardIds: string[]) => void;
+  onSwapCard?: (cardId: string) => void;
+  onLeave?: () => void;
   isHost?: boolean;
 }
 
-export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
+export default function CAHPlaying({ onSubmitCards, onSwapCard, onLeave }: CAHPlayingProps) {
   const {
     players,
     currentPlayerId,
@@ -21,15 +23,17 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
     submitCards,
     isCurrentPlayerCzar,
     getCurrentCzar,
+    canSwap,
   } = useCAHStore();
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const czar = getCurrentCzar();
   const isCzar = isCurrentPlayerCzar();
   const requiredPicks = currentBlackCard?.pick || 1;
-  const canSubmit = currentPlayer &&
+  const canSubmitCards = currentPlayer &&
     currentPlayer.selectedCards.length === requiredPicks &&
     !currentPlayer.hasSubmitted;
+  const swapAvailable = currentPlayerId ? canSwap(currentPlayerId) : false;
 
   // Format black card text with blanks
   const formatBlackCard = (text: string) => {
@@ -60,15 +64,19 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
     }
   };
 
+  const handleSwap = (e: React.MouseEvent, cardId: string) => {
+    e.stopPropagation();
+    if (!swapAvailable || !onSwapCard) return;
+    onSwapCard(cardId);
+  };
+
   const handleSubmit = () => {
-    if (!canSubmit || !currentPlayer) return;
+    if (!canSubmitCards || !currentPlayer) return;
 
     if (onSubmitCards) {
-      // Use the broadcast callback (handles both host and non-host)
       const cardIds = currentPlayer.selectedCards.map(c => c.id);
       onSubmitCards(cardIds);
     } else {
-      // Fallback: submit locally
       submitCards(currentPlayerId!);
     }
   };
@@ -129,6 +137,13 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
         </div>
       ) : (
         <>
+          {/* Swap indicator */}
+          {swapAvailable && !isCzar && !currentPlayer?.hasSubmitted && (
+            <div className="cah-swap-indicator">
+              Swap available! Tap the 🔄 on any card to replace it.
+            </div>
+          )}
+
           {/* Selection indicator */}
           {currentPlayer && currentPlayer.selectedCards.length > 0 && (
             <div className="cah-selection-bar">
@@ -136,7 +151,7 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={!canSubmit}
+                disabled={!canSubmitCards}
               >
                 Submit Cards
               </button>
@@ -163,11 +178,30 @@ export default function CAHPlaying({ onSubmitCards }: CAHPlayingProps) {
                   {isSelected && requiredPicks > 1 && (
                     <div className="cah-selection-order">{selectionOrder}</div>
                   )}
+                  {/* Swap button */}
+                  {swapAvailable && !isSelected && (
+                    <button
+                      className="cah-swap-btn"
+                      onClick={(e) => handleSwap(e, card.id)}
+                      title="Swap this card"
+                    >
+                      🔄
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
         </>
+      )}
+
+      {/* Leave button */}
+      {onLeave && (
+        <div className="cah-leave-container">
+          <button className="btn btn-ghost btn-small" onClick={onLeave} style={{ opacity: 0.7 }}>
+            ← Return to Lobby
+          </button>
+        </div>
       )}
     </div>
   );

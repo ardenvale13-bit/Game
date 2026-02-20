@@ -600,6 +600,55 @@
   box-shadow: 0 8px 40px var(--glow-primary), 0 8px 40px var(--glow-secondary);
 }
 
+/* Card Swap */
+.cah-swap-indicator {
+  text-align: center;
+  padding: 8px 16px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--accent-secondary);
+  animation: swapPulse 2s ease-in-out infinite;
+}
+
+@keyframes swapPulse {
+  0%, 100% { border-color: rgba(168, 85, 247, 0.3); }
+  50% { border-color: rgba(168, 85, 247, 0.6); }
+}
+
+.cah-swap-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.15);
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 20;
+}
+
+.cah-swap-btn:hover {
+  background: rgba(168, 85, 247, 0.4);
+  border-color: var(--accent-secondary);
+  transform: scale(1.15) rotate(90deg);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+/* Leave / Return to Lobby */
+.cah-leave-container {
+  text-align: center;
+  padding: 8px;
+  margin-top: auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .cah-hand {

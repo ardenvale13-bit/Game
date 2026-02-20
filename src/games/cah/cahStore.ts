@@ -34,26 +34,30 @@ export interface CAHGameState {
   // Room
   roomCode: string | null;
   roomName: string | null;
-  
+
   // Players
   players: CAHPlayer[];
   currentPlayerId: string | null;
   czarIndex: number;
-  
+  czarRotation: string[];  // Fixed player ID order for deterministic czar rotation
+
   // Game state
   phase: CAHPhase;
   currentRound: number;
   maxRounds: number;
-  
+
   // Cards
   currentBlackCard: BlackCard | null;
   submissions: CAHSubmission[];
   usedBlackCards: string[];
   usedWhiteCards: string[];
-  
+
+  // Card swap
+  swapCooldowns: Record<string, number>;  // playerId -> last round they swapped
+
   // Timer
   timeRemaining: number;
-  
+
   // Settings
   cardsPerHand: number;
   roundTime: number;
@@ -85,7 +89,11 @@ interface CAHActions {
   
   // Settings
   setMaxRounds: (rounds: number) => void;
-  
+
+  // Card swap
+  swapCard: (playerId: string, cardId: string) => void;
+  canSwap: (playerId: string) => boolean;
+
   // Helpers
   getCurrentCzar: () => CAHPlayer | undefined;
   getCurrentPlayer: () => CAHPlayer | undefined;
@@ -105,6 +113,7 @@ const initialState: CAHGameState = {
   players: [],
   currentPlayerId: null,
   czarIndex: 0,
+  czarRotation: [],
   phase: 'lobby',
   currentRound: 0,
   maxRounds: 10,
@@ -112,6 +121,7 @@ const initialState: CAHGameState = {
   submissions: [],
   usedBlackCards: [],
   usedWhiteCards: [],
+  swapCooldowns: {},
   timeRemaining: 0,
   cardsPerHand: CARDS_PER_HAND,
   roundTime: ROUND_TIME,
@@ -153,25 +163,31 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
   // Game flow
   startGame: () => {
     const state = get();
-    
-    // Reset players for game start
-    const players = state.players.map((p, idx) => ({
+
+    // Build a fixed czar rotation order (by player ID) — deterministic for all clients
+    const czarRotation = state.players.map(p => p.id);
+    const firstCzarId = czarRotation[0];
+
+    // Reset players for game start — use ID matching, not index
+    const players = state.players.map((p) => ({
       ...p,
       score: 0,
-      isCzar: idx === 0,
+      isCzar: p.id === firstCzarId,
       selectedCards: [],
       hasSubmitted: false,
     }));
-    
+
     set({
       phase: 'playing',
       currentRound: 1,
       players,
       czarIndex: 0,
+      czarRotation,
       usedBlackCards: [],
       submissions: [],
+      swapCooldowns: {},
     });
-    
+
     get().startRound();
   },
   
@@ -312,25 +328,27 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
   
   nextRound: () => {
     const state = get();
-    
+
     // Check if game should end
     if (state.currentRound >= state.maxRounds) {
       set({ phase: 'game-over' });
       return;
     }
-    
-    // Rotate czar
-    const nextCzarIndex = (state.czarIndex + 1) % state.players.length;
-    
+
+    // Rotate czar using the fixed rotation order (by player ID, not array index)
+    const rotationLength = state.czarRotation.length || state.players.length;
+    const nextCzarIndex = (state.czarIndex + 1) % rotationLength;
+    const nextCzarId = state.czarRotation[nextCzarIndex] ?? state.players[nextCzarIndex]?.id;
+
     set({
       currentRound: state.currentRound + 1,
       czarIndex: nextCzarIndex,
-      players: state.players.map((p, idx) => ({
+      players: state.players.map((p) => ({
         ...p,
-        isCzar: idx === nextCzarIndex,
+        isCzar: p.id === nextCzarId,
       })),
     });
-    
+
     get().startRound();
   },
   
@@ -348,7 +366,45 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
   
   // Settings
   setMaxRounds: (rounds) => set({ maxRounds: rounds }),
-  
+
+  // Card swap — players can swap 1 card every 3 rounds
+  swapCard: (playerId, cardId) => {
+    const state = get();
+    const player = state.players.find(p => p.id === playerId);
+    if (!player || player.isCzar || player.hasSubmitted) return;
+
+    // Check cooldown
+    const lastSwap = state.swapCooldowns[playerId] || 0;
+    if (lastSwap > 0 && state.currentRound - lastSwap < 3) return;
+
+    // Find the card to replace
+    if (!player.hand.find(c => c.id === cardId)) return;
+
+    // Deal a replacement card
+    const newCards = dealWhiteCards(1, state.usedWhiteCards);
+    if (newCards.length === 0) return;
+    const newCard = newCards[0];
+
+    const newHand = player.hand.map(c => c.id === cardId ? newCard : c);
+
+    set({
+      players: state.players.map(p =>
+        p.id === playerId ? { ...p, hand: newHand } : p
+      ),
+      usedWhiteCards: [...state.usedWhiteCards, newCard.id],
+      swapCooldowns: { ...state.swapCooldowns, [playerId]: state.currentRound },
+    });
+  },
+
+  canSwap: (playerId) => {
+    const state = get();
+    if (state.phase !== 'playing') return false;
+    const player = state.players.find(p => p.id === playerId);
+    if (!player || player.isCzar || player.hasSubmitted) return false;
+    const lastSwap = state.swapCooldowns[playerId] || 0;
+    return lastSwap === 0 || (state.currentRound - lastSwap >= 3);
+  },
+
   // Helpers
   getCurrentCzar: () => {
     const state = get();

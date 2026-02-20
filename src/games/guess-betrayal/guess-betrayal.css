@@ -1,0 +1,604 @@
+/* Guess Betrayal - Styles */
+
+.gb-layout {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ====== HEADER ====== */
+
+.gb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+}
+
+.gb-round {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.gb-timer {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.gb-status {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ====== QUESTION CARD ====== */
+
+.gb-question-container {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.gb-question-card {
+  background: linear-gradient(135deg, #5865f2 0%, #7b68ee 50%, #9b59b6 100%);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(88, 101, 242, 0.3);
+  text-align: center;
+}
+
+.gb-question-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+}
+
+.gb-question-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.5;
+}
+
+/* ====== QUESTION REMINDER (compact, for guessing/results) ====== */
+
+.gb-question-reminder {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-left: 3px solid #5865f2;
+}
+
+.gb-question-reminder-label {
+  font-weight: 700;
+  color: #5865f2;
+  margin-right: 6px;
+}
+
+/* ====== ANSWER INPUT (Answering phase) ====== */
+
+.gb-answer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.gb-answer-prompt {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.gb-answer-input {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  resize: none;
+  min-height: 100px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.gb-answer-input:focus {
+  outline: none;
+  border-color: #5865f2;
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.2);
+}
+
+.gb-answer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.gb-answer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gb-char-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ====== SUBMITTED WAITING ====== */
+
+.gb-submitted-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.gb-waiting-icon {
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(88, 101, 242, 0.15);
+  border-radius: 50%;
+  color: #5865f2;
+}
+
+.gb-submitted-waiting h3 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.gb-submitted-waiting p {
+  color: var(--text-muted);
+}
+
+.gb-waiting-progress {
+  background: var(--bg-card);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* ====== GUESSING PHASE ====== */
+
+.gb-guess-instructions {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.gb-answers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gb-answer-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.gb-answer-card:hover {
+  border-color: #5865f2;
+}
+
+.gb-answer-card.active {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.2);
+}
+
+.gb-answer-card.assigned {
+  border-color: #43b581;
+  background: rgba(67, 181, 129, 0.08);
+}
+
+.gb-answer-card.own {
+  opacity: 0.5;
+  cursor: default;
+  border-style: dashed;
+}
+
+.gb-answer-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.gb-answer-assigned {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #43b581;
+  font-weight: 600;
+}
+
+.gb-mini-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.gb-remove-guess {
+  margin-left: auto;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+.gb-answer-own-tag {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Player selector */
+
+.gb-player-selector {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 2px solid #5865f2;
+}
+
+.gb-selector-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5865f2;
+  margin-bottom: 10px;
+}
+
+.gb-selector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gb-selector-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.gb-selector-player:hover:not(:disabled) {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.1);
+}
+
+.gb-selector-player.used {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.gb-selector-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.gb-guess-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+/* ====== RESULTS PHASE ====== */
+
+.gb-round-score {
+  display: flex;
+  justify-content: center;
+}
+
+.gb-score-breakdown {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+}
+
+.gb-score-correct {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #43b581;
+}
+
+.gb-score-betrayal {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f04747;
+  animation: gb-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes gb-pulse {
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.05); }
+}
+
+.gb-reveals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gb-reveal-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.gb-reveal-card.betrayal {
+  border-color: #f04747;
+  background: rgba(240, 71, 71, 0.08);
+}
+
+.gb-reveal-answer {
+  font-size: 1rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+.gb-reveal-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.gb-reveal-name {
+  color: var(--text-primary);
+}
+
+.gb-betrayal-badge {
+  margin-left: 8px;
+  color: #f04747;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.gb-reveal-guessers {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ====== GAME OVER ====== */
+
+.gb-game-over {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.gb-winner-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0;
+}
+
+.gb-winner-crown {
+  font-size: 3rem;
+  animation: gb-bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes gb-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.gb-winner-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #5865f2, #9b59b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gb-winner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.gb-winner-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #faa61a;
+  box-shadow: 0 4px 20px rgba(250, 166, 26, 0.3);
+}
+
+.gb-winner-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gb-winner-score {
+  font-size: 1.2rem;
+  color: #5865f2;
+  font-weight: 600;
+}
+
+.gb-winner-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Leaderboard */
+
+.gb-leaderboard {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gb-leaderboard-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.gb-leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+}
+
+.gb-leaderboard-row.first {
+  border-color: #faa61a;
+  background: rgba(250, 166, 26, 0.08);
+}
+
+.gb-leaderboard-row.second {
+  border-color: #c0c0c0;
+}
+
+.gb-leaderboard-row.third {
+  border-color: #cd7f32;
+}
+
+.gb-lb-rank {
+  font-size: 1.1rem;
+  width: 30px;
+  text-align: center;
+}
+
+.gb-lb-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.gb-lb-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gb-lb-score {
+  font-weight: 700;
+  color: #5865f2;
+}
+
+/* ====== ACTIONS & MISC ====== */
+
+.gb-gameover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 16px;
+}
+
+.gb-leave-container {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  margin-top: auto;
+}
+
+.gb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+/* ====== MOBILE RESPONSIVE ====== */
+
+@media (max-width: 480px) {
+  .gb-layout {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .gb-question-card {
+    padding: 20px 16px;
+  }
+
+  .gb-question-text {
+    font-size: 1.05rem;
+  }
+
+  .gb-header {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
+  .gb-timer {
+    font-size: 1.2rem;
+  }
+
+  .gb-selector-grid {
+    gap: 6px;
+  }
+
+  .gb-selector-player {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}

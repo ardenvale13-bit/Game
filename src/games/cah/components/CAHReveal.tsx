@@ -1,7 +1,11 @@
 // CAH Reveal Component - Shows the round winner
 import useCAHStore from '../cahStore';
 
-export default function CAHReveal() {
+interface CAHRevealProps {
+  onLeave?: () => void;
+}
+
+export default function CAHReveal({ onLeave }: CAHRevealProps) {
   const {
     currentBlackCard,
     submissions,
@@ -71,6 +75,15 @@ export default function CAHReveal() {
         <div className="cah-next-round-text">
           Next round starting...
         </div>
+
+        {/* Leave button */}
+        {onLeave && (
+          <div className="cah-leave-container">
+            <button className="btn btn-ghost btn-small" onClick={onLeave} style={{ opacity: 0.7 }}>
+              ← Return to Lobby
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../store/lobbyStore';
 import type { GameType, Player } from '../store/lobbyStore';
+import { CATEGORY_INFO } from '../games/guess-betrayal/questionData';
 import { useRealtimeRoom } from '../hooks/useRealtimeRoom';
 import type { PresencePlayer, BroadcastEvent } from '../hooks/useRealtimeRoom';
 import { deleteRoom } from '../lib/roomService';
@@ -19,8 +20,10 @@ export default function Lobby() {
     roomName,
     selectedGame,
     roundCount,
+    gbCategory,
     selectGame,
     setRoundCount,
+    setGbCategory,
     startGame,
     leaveLobby,
     setPlayers,
@@ -87,10 +90,16 @@ export default function Lobby() {
         if (event.payload.roundCount !== undefined) {
           setRoundCount(event.payload.roundCount as number);
         }
+        if (event.payload.gbCategory !== undefined) {
+          setGbCategory(event.payload.gbCategory as string);
+        }
         break;
       case 'game_start':
         if (event.payload.roundCount !== undefined) {
           setRoundCount(event.payload.roundCount as number);
+        }
+        if (event.payload.gbCategory !== undefined) {
+          setGbCategory(event.payload.gbCategory as string);
         }
         startGame();
         navigate(`/play/${event.payload.game}/${roomCode}`);
@@ -136,7 +145,7 @@ export default function Lobby() {
     if (!canStartGame() || !selectedGame) return;
     startGame();
     // Broadcast to all clients to start (include settings)
-    sendEvent('game_start', { game: selectedGame, roundCount });
+    sendEvent('game_start', { game: selectedGame, roundCount, gbCategory });
     navigate(`/play/${selectedGame}/${roomCode}`);
   };
 
@@ -156,6 +165,7 @@ export default function Lobby() {
     if (game === 'wmlt') return 3;
     if (game === 'hangman') return 2;
     if (game === 'wavelength') return 4;
+    if (game === 'guess-betrayal') return 4;
     return 2;
   };
 
@@ -167,6 +177,7 @@ export default function Lobby() {
       case 'wmlt': return "Who's Most Likely To";
       case 'hangman': return 'Hangman';
       case 'wavelength': return 'Wavelength';
+      case 'guess-betrayal': return 'Guess Betrayal';
       default: return '';
     }
   };
@@ -179,8 +190,14 @@ export default function Lobby() {
       case 'wmlt': return '/wmlt-icon.png';
       case 'hangman': return '/hangman-icon.png';
       case 'wavelength': return '/wavelength-icon.png';
+      case 'guess-betrayal': return '/guess-betrayal-icon.png';
       default: return '';
     }
+  };
+
+  const handleGbCategoryChange = (cat: string) => {
+    setGbCategory(cat);
+    sendEvent('settings_changed', { gbCategory: cat });
   };
 
   return (
@@ -266,7 +283,7 @@ export default function Lobby() {
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {(['pictionary', 'cah', 'codenames', 'wmlt', 'hangman', 'wavelength'] as GameType[]).map((game) => (
+          {(['pictionary', 'cah', 'codenames', 'wmlt', 'hangman', 'wavelength', 'guess-betrayal'] as GameType[]).map((game) => (
             <button
               key={game}
               className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}
@@ -287,8 +304,82 @@ export default function Lobby() {
         {!hostPlayer && selectedGame && (
           <div className="text-muted mt-2 text-center" style={{ fontSize: '0.85rem' }}>
             Host selected: <strong>{getGameName(selectedGame)}</strong>
-            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'hangman') && ` · ${roundCount} rounds`}
+            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'hangman' || selectedGame === 'cah' || selectedGame === 'guess-betrayal') && ` · ${roundCount} rounds`}
           </div>
+        )}
+
+        {/* Round count selector for CAH - host only */}
+        {hostPlayer && selectedGame === 'cah' && (
+          <div className="mt-3">
+            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[10, 15, 20, 25, 30].map((count) => (
+                <button
+                  key={count}
+                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleRoundCountChange(count)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '0.95rem',
+                    fontWeight: roundCount === count ? 700 : 400,
+                    minWidth: '50px',
+                  }}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Guess Betrayal settings - host only */}
+        {hostPlayer && selectedGame === 'guess-betrayal' && (
+          <>
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Category</div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  className={`btn ${gbCategory === 'blend' ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleGbCategoryChange('blend')}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === 'blend' ? 700 : 400 }}
+                >
+                  🎲 Blend
+                </button>
+                {(Object.entries(CATEGORY_INFO) as [string, { name: string; icon: string }][]).map(([key, info]) => (
+                  <button
+                    key={key}
+                    className={`btn ${gbCategory === key ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                    onClick={() => handleGbCategoryChange(key)}
+                    style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === key ? 700 : 400 }}
+                  >
+                    {info.icon} {info.name.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[5, 8, 10, 12, 15].map((count) => (
+                  <button
+                    key={count}
+                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                    onClick={() => handleRoundCountChange(count)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.95rem',
+                      fontWeight: roundCount === count ? 700 : 400,
+                      minWidth: '45px',
+                    }}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Round count selector for WMLT - host only */}

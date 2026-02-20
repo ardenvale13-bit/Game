@@ -10,7 +10,7 @@ export interface Player {
   score: number; // Persists across games in same session
 }
 
-export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'hangman' | 'wavelength' | null;
+export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'hangman' | 'wavelength' | 'guess-betrayal' | null;
 
 interface LobbyState {
   // Room
@@ -27,6 +27,7 @@ interface LobbyState {
 
   // Game settings
   roundCount: number; // For Scribbl n' Draw: 3, 5, or 10; WMLT: 5, 10, 15
+  gbCategory: string; // Guess Betrayal category
 }
 
 interface LobbyActions {
@@ -45,6 +46,7 @@ interface LobbyActions {
   // Game selection & settings
   selectGame: (game: GameType) => void;
   setRoundCount: (count: number) => void;
+  setGbCategory: (cat: string) => void;
   startGame: () => void;
   endGame: () => void;
 
@@ -66,6 +68,7 @@ const initialState: LobbyState = {
   selectedGame: null,
   isInGame: false,
   roundCount: 3,
+  gbCategory: 'blend',
 };
 
 const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
@@ -104,6 +107,7 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
   // Game selection & settings
   selectGame: (game) => set({ selectedGame: game }),
   setRoundCount: (count) => set({ roundCount: count }),
+  setGbCategory: (cat) => set({ gbCategory: cat }),
 
   startGame: () => set({ isInGame: true }),
 
@@ -127,6 +131,7 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
     if (state.selectedGame === 'wmlt') return state.players.length >= 3;
     if (state.selectedGame === 'hangman') return state.players.length >= 2;
     if (state.selectedGame === 'wavelength') return state.players.length >= 4;
+    if (state.selectedGame === 'guess-betrayal') return state.players.length >= 4;
     return state.players.length >= 2;
   },
 

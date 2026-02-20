@@ -36,27 +36,30 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
       // Round start — black card, czar, hands, etc. (single atomic broadcast)
       channel.on('broadcast', { event: 'cah_round_start' }, ({ payload }) => {
         if (!payload) return;
-        const { blackCard, czarIndex, czarPlayerId, round, phase, timeRemaining, playerHands } = payload as {
+        const { blackCard, czarIndex, czarPlayerId, czarRotation, round, phase, timeRemaining, playerHands, swapCooldowns, maxRounds } = payload as {
           blackCard: BlackCard;
           czarIndex: number;
           czarPlayerId?: string;
+          czarRotation?: string[];
           round: number;
           phase: CAHPhase;
           timeRemaining: number;
           playerHands?: Record<string, WhiteCard[]>;
+          swapCooldowns?: Record<string, number>;
+          maxRounds?: number;
         };
-        const players = store.getState().players.map((p, idx) => {
+        const players = store.getState().players.map((p) => {
           const hand = playerHands?.[p.id] ?? p.hand;
           return {
             ...p,
             hand,
-            // Use czarPlayerId (player ID) if available — immune to ordering differences
-            isCzar: czarPlayerId ? p.id === czarPlayerId : idx === czarIndex,
+            // Always use czarPlayerId — immune to array ordering differences
+            isCzar: czarPlayerId ? p.id === czarPlayerId : false,
             selectedCards: [] as WhiteCard[],
             hasSubmitted: false,
           };
         });
-        store.setState({
+        const updates: Record<string, unknown> = {
           currentBlackCard: blackCard,
           czarIndex,
           currentRound: round,
@@ -64,7 +67,11 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
           timeRemaining,
           submissions: [],
           players,
-        });
+        };
+        if (czarRotation) updates.czarRotation = czarRotation;
+        if (swapCooldowns) updates.swapCooldowns = swapCooldowns;
+        if (maxRounds !== undefined) updates.maxRounds = maxRounds;
+        store.setState(updates as any);
       });
 
       // Deal cards to this player
@@ -224,6 +231,24 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         store.getState().selectWinner(winnerId);
       });
 
+      // Player wants to swap a card (non-host)
+      channel.on('broadcast', { event: 'cah_swap_card' }, ({ payload }) => {
+        if (!payload) return;
+        const { senderId, cardId } = payload as { senderId: string; cardId: string };
+        store.getState().swapCard(senderId, cardId);
+        // Send the updated hand back to the player
+        setTimeout(() => {
+          const player = store.getState().players.find(p => p.id === senderId);
+          if (player) {
+            channel.send({
+              type: 'broadcast',
+              event: 'cah_deal_cards',
+              payload: { targetPlayerId: senderId, cards: player.hand },
+            });
+          }
+        }, 50);
+      });
+
       // Respond to state requests from newly connected clients
       channel.on('broadcast', { event: 'cah_request_state' }, () => {
         setTimeout(() => {
@@ -322,10 +347,13 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
         blackCard: state.currentBlackCard,
         czarIndex: state.czarIndex,
         czarPlayerId: czarPlayer?.id ?? null,
+        czarRotation: state.czarRotation,
         round: state.currentRound,
+        maxRounds: state.maxRounds,
         phase: state.phase,
         timeRemaining: state.timeRemaining,
         playerHands,
+        swapCooldowns: state.swapCooldowns,
       },
     });
   }, [isHost]);
@@ -456,6 +484,17 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     });
   }, []);
 
+  // Player swaps a card (non-host)
+  const broadcastSwapCard = useCallback((cardId: string) => {
+    const channel = channelRef.current;
+    if (!channel || !playerId) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'cah_swap_card',
+      payload: { senderId: playerId, cardId },
+    });
+  }, [playerId]);
+
   return {
     isReady,
     broadcastRoundStart,
@@ -468,6 +507,7 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     broadcastSubmitCards,
     broadcastPickWinner,
     broadcastTTS,
+    broadcastSwapCard,
     channel: channelRef,
   };
 }

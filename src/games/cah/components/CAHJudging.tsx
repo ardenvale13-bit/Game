@@ -6,9 +6,10 @@ interface CAHJudgingProps {
   onPickWinner?: (winnerId: string) => void;
   isHost?: boolean;
   onReadAloud?: (text: string) => Promise<void> | void;
+  onLeave?: () => void;
 }
 
-export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProps) {
+export default function CAHJudging({ onPickWinner, onReadAloud, onLeave }: CAHJudgingProps) {
   const {
     currentBlackCard,
     currentRound,
@@ -155,6 +156,15 @@ export default function CAHJudging({ onPickWinner, onReadAloud }: CAHJudgingProp
       {!isCzar && (
         <div className="cah-waiting-text">
           Waiting for {czar?.name} to pick...
+        </div>
+      )}
+
+      {/* Leave button */}
+      {onLeave && (
+        <div className="cah-leave-container">
+          <button className="btn btn-ghost btn-small" onClick={onLeave} style={{ opacity: 0.7 }}>
+            ← Return to Lobby
+          </button>
         </div>
       )}
     </div>
