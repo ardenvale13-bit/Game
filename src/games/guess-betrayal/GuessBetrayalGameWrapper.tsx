@@ -28,7 +28,6 @@ export default function GuessBetrayalGameWrapper() {
     players: gbPlayers,
     currentPlayerId,
     currentRound,
-    shuffledAnswers,
     addPlayer,
     setCurrentPlayer,
     setRoomCode,
@@ -78,7 +77,7 @@ export default function GuessBetrayalGameWrapper() {
         setMaxRounds(rc);
       }
       const cat = lobbyState.gbCategory;
-      if (cat) setCategory(cat);
+      if (cat) setCategory(cat as import('./questionData').QuestionCategory);
 
       lobbyPlayers.forEach((p) => {
         addPlayer({
