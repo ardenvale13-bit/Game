@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Avatar } from '../data/avatars';
-import { getWordSelection } from '../data/wordBank';
+import { getRandomUnusedWord, resetUsedWords } from '../data/wordBank';
 import type { Word } from '../data/wordBank';
 
 // Types
@@ -206,24 +206,35 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   
   startWordSelection: () => {
     const state = get();
-    const wordOptions = getWordSelection(state.settings.wordChoices);
-    
+
+    // Auto-assign a random unused word (no more word picking)
+    const word = getRandomUnusedWord();
+
     // Reset guess state for new round
     const updatedPlayers = state.players.map(p => ({
       ...p,
       hasGuessedCorrectly: false,
       isDrawing: state.players.indexOf(p) === state.currentDrawerIndex,
     }));
-    
+
     set({
-      phase: 'word-selection',
-      wordOptions,
-      currentWord: null,
-      wordHint: '',
-      timeRemaining: state.settings.wordSelectionTime,
+      phase: 'drawing',
+      wordOptions: [],
+      currentWord: word.text,
+      wordHint: generateHint(word.text),
+      timeRemaining: state.settings.roundTime,
       drawCommands: [],
       guessOrder: [],
       players: updatedPlayers,
+    });
+
+    // Add system message
+    get().addMessage({
+      playerId: 'system',
+      playerName: 'System',
+      content: `${get().getCurrentDrawer()?.name} is drawing!`,
+      isCorrectGuess: false,
+      isSystemMessage: true,
     });
   },
   
@@ -295,13 +306,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   
   endGame: () => set({ phase: 'game-over' }),
   
-  resetGame: () => set({
-    ...initialState,
-    roomCode: get().roomCode,
-    players: get().players.map(p => ({ ...p, score: 0, isDrawing: false, hasGuessedCorrectly: false })),
-    currentPlayerId: get().currentPlayerId,
-    isConnected: get().isConnected,
-  }),
+  resetGame: () => {
+    resetUsedWords();
+    set({
+      ...initialState,
+      roomCode: get().roomCode,
+      players: get().players.map(p => ({ ...p, score: 0, isDrawing: false, hasGuessedCorrectly: false })),
+      currentPlayerId: get().currentPlayerId,
+      isConnected: get().isConnected,
+    });
+  },
   
   // Timer
   setTimeRemaining: (time) => set({ timeRemaining: time }),
@@ -310,16 +324,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const state = get();
     const newTime = Math.max(0, state.timeRemaining - 1);
     set({ timeRemaining: newTime });
-    
+
     // Auto-end round if time runs out during drawing
     if (newTime === 0 && state.phase === 'drawing') {
       get().endRound();
-    }
-    
-    // Auto-select random word if time runs out during word selection
-    if (newTime === 0 && state.phase === 'word-selection') {
-      const randomWord = state.wordOptions[Math.floor(Math.random() * state.wordOptions.length)];
-      get().selectWord(randomWord.text);
     }
   },
   

@@ -10,6 +10,7 @@ import WMLTGameWrapper from '../games/wmlt/WMLTGameWrapper';
 import HangmanGameWrapper from '../games/hangman/HangmanGameWrapper';
 import WavelengthGameWrapper from '../games/wavelength/WavelengthGameWrapper';
 import GuessBetrayalGameWrapper from '../games/guess-betrayal/GuessBetrayalGameWrapper';
+import MakeItMemeGameWrapper from '../games/meme/MakeItMemeGameWrapper';
 
 export default function GameRouter() {
   const { game, roomCode } = useParams();
@@ -36,6 +37,8 @@ export default function GameRouter() {
       return <WavelengthGameWrapper />;
     case 'guess-betrayal':
       return <GuessBetrayalGameWrapper />;
+    case 'meme':
+      return <MakeItMemeGameWrapper />;
     default:
       return <Navigate to={`/lobby/${roomCode}`} replace />;
   }

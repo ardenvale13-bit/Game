@@ -319,11 +319,14 @@ h3 {
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
   position: relative;
+  min-height: 0;
 }
 
 .canvas-container canvas {
   display: block;
   cursor: crosshair;
+  width: 100%;
+  height: 100%;
 }
 
 /* Chat/guess area */
@@ -574,6 +577,8 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .game-layout .sidebar-right {

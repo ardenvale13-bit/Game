@@ -20,10 +20,11 @@ export default function HangmanWordPicker({ onSetWord }: HangmanWordPickerProps)
   const handleSubmitCustom = () => {
     if (!customWord.trim()) return;
 
-    const word = customWord.trim().toUpperCase();
-    // Validate word (letters only)
-    if (!/^[A-Z]+$/.test(word)) {
-      alert('Word must contain only letters');
+    // Normalize: trim, uppercase, collapse multiple spaces
+    const word = customWord.trim().toUpperCase().replace(/\s+/g, ' ');
+    // Validate: letters and spaces only, must contain at least one letter
+    if (!/^[A-Z][A-Z ]*[A-Z]$/.test(word) && !/^[A-Z]$/.test(word)) {
+      alert('Word must contain only letters (spaces allowed for phrases)');
       return;
     }
 
@@ -65,11 +66,11 @@ export default function HangmanWordPicker({ onSetWord }: HangmanWordPickerProps)
           <input
             id="custom-word"
             type="text"
-            placeholder="Enter a word..."
+            placeholder="Enter a word or phrase..."
             value={customWord}
             onChange={(e) => setCustomWord(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCustom()}
-            maxLength={20}
+            maxLength={40}
           />
         </div>
 

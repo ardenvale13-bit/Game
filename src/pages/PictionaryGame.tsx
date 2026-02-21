@@ -4,7 +4,6 @@ import useGameStore from '../store/gameStore';
 import useLobbyStore from '../store/lobbyStore';
 import { usePictionarySync } from '../hooks/usePictionarySync';
 import DrawingCanvas from '../components/DrawingCanvas';
-import WordSelection from '../components/WordSelection';
 import ChatPanel from '../components/ChatPanel';
 import PlayerList from '../components/PlayerList';
 import GameOver from '../components/GameOver';
@@ -54,8 +53,6 @@ export default function PictionaryGame() {
     broadcastDraw,
     broadcastClearCanvas,
     broadcastGuess,
-    broadcastWordOptions,
-    broadcastWordSelection,
     broadcastRoundEnd,
     broadcastChatMessage,
     broadcastSnapshot,
@@ -115,22 +112,14 @@ export default function PictionaryGame() {
     if (!isHost) return;
     const t = setTimeout(() => {
       broadcastGameState();
-      // If word selection started and drawer is non-host, send word options
-      if (phase === 'word-selection') {
-        const s = useGameStore.getState();
-        const drawer = s.players[s.currentDrawerIndex];
-        if (drawer && !drawer.isHost) {
-          broadcastWordOptions(drawer.id, s.wordOptions);
-        }
-      }
     }, 50);
     return () => clearTimeout(t);
-  }, [phase, currentRound, isHost, broadcastGameState, broadcastWordOptions]);
+  }, [phase, currentRound, isHost, broadcastGameState]);
 
   // HOST ONLY: run the game timer
   useEffect(() => {
     if (!isHost) return;
-    if (phase === 'word-selection' || phase === 'drawing') {
+    if (phase === 'drawing') {
       timerRef.current = setInterval(() => decrementTime(), 1000);
     }
     return () => {
@@ -140,7 +129,7 @@ export default function PictionaryGame() {
 
   // HOST: sync timer to non-host clients periodically
   useEffect(() => {
-    if (!isHost || (phase !== 'drawing' && phase !== 'word-selection')) {
+    if (!isHost || phase !== 'drawing') {
       if (timerSyncRef.current) clearInterval(timerSyncRef.current);
       return;
     }
@@ -250,7 +239,7 @@ export default function PictionaryGame() {
                   fontWeight: 700,
                   color: 'var(--accent-success)'
                 }}>
-                  The word was: {currentWord}
+                  Round over!
                 </span>
               )}
             </div>
@@ -261,18 +250,50 @@ export default function PictionaryGame() {
           </div>
         </div>
 
-        {/* Canvas or Word Selection */}
-        {phase === 'word-selection' && isDrawing ? (
-          <WordSelection
-            onSelectWord={isHost ? undefined : broadcastWordSelection}
-          />
-        ) : (
+        {/* Canvas area */}
+        <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <DrawingCanvas
             onDrawBroadcast={isDrawing ? broadcastDraw : undefined}
             onClearBroadcast={isDrawing ? broadcastClearCanvas : undefined}
             onSnapshotBroadcast={isDrawing ? broadcastSnapshot : undefined}
           />
-        )}
+
+          {/* Word reveal popup overlay */}
+          {phase === 'round-end' && currentWord && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(10, 10, 20, 0.85)',
+              borderRadius: 'var(--radius-lg)',
+              zIndex: 50,
+              animation: 'fadeIn 0.3s ease',
+            }}>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <div style={{
+                  fontSize: '1rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '8px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                }}>
+                  The word was
+                </div>
+                <div style={{
+                  fontSize: '2.5rem',
+                  fontWeight: 800,
+                  color: 'var(--accent-success)',
+                  fontFamily: 'var(--font-display)',
+                  textShadow: '0 0 20px rgba(74, 222, 128, 0.4)',
+                }}>
+                  {currentWord}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right Sidebar - Chat */}

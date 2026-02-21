@@ -138,6 +138,9 @@ const useHangmanStore = create<HangmanGameState & HangmanActions>((set, get) => 
 
     const upperLetter = letter.toUpperCase();
 
+    // Ignore non-letter characters (spaces etc.)
+    if (!/^[A-Z]$/.test(upperLetter)) return;
+
     // Already guessed
     if (state.guessedLetters.includes(upperLetter)) return;
 
@@ -151,8 +154,8 @@ const useHangmanStore = create<HangmanGameState & HangmanActions>((set, get) => 
       pointsAward = 10;
     }
 
-    // Check if word is complete
-    const isComplete = state.secretWord.split('').every((c) => newGuessedLetters.includes(c));
+    // Check if word is complete (ignore spaces — they're auto-revealed)
+    const isComplete = state.secretWord.split('').every((c) => c === ' ' || newGuessedLetters.includes(c));
     const isLost = newWrongGuesses >= state.maxWrong;
 
     if (isComplete) {
@@ -252,13 +255,13 @@ const useHangmanStore = create<HangmanGameState & HangmanActions>((set, get) => 
     const state = get();
     return state.secretWord
       .split('')
-      .map((letter) => (state.guessedLetters.includes(letter) ? letter : '_'))
+      .map((letter) => (letter === ' ' ? '  ' : state.guessedLetters.includes(letter) ? letter : '_'))
       .join(' ');
   },
 
   isWordComplete: () => {
     const state = get();
-    return state.secretWord.split('').every((c) => state.guessedLetters.includes(c));
+    return state.secretWord.split('').every((c) => c === ' ' || state.guessedLetters.includes(c));
   },
 
   isGameLost: () => {
