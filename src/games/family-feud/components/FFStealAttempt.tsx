@@ -35,7 +35,6 @@ export default function FFStealAttempt({
   const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const stealingPlayers = players.filter((p) => p.team === stealingTeam);
   const isOnStealingTeam = players.find((p) => p.id === currentPlayerId)?.team === stealingTeam;
 
   // Anyone on the stealing team can type (first person to submit)
@@ -105,8 +104,8 @@ export default function FFStealAttempt({
 
       {/* Steal result */}
       {stealResult && (
-        <div className={`ff-steal-result ${stealResult === 'correct' ? 'ff-steal-success' : 'ff-steal-fail'}`}>
-          {stealResult === 'correct'
+        <div className={`ff-steal-result ${stealResult === 'success' ? 'ff-steal-success' : 'ff-steal-fail'}`}>
+          {stealResult === 'success'
             ? `✓ "${stealAnswer}" is correct! STOLEN!`
             : `✕ "${stealAnswer}" — Not on the board! Points go to ${controllingTeam === 'pink' ? pinkTeamName : purpleTeamName}!`}
         </div>

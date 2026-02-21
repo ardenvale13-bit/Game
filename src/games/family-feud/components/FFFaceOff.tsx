@@ -8,7 +8,6 @@ interface FFFaceOffProps {
   isHost: boolean;
   onBuzz: (answer: string) => void;
   onBothBuzzed: () => void;
-  onResolve: () => void;
 }
 
 export default function FFFaceOff({
@@ -16,7 +15,6 @@ export default function FFFaceOff({
   isHost,
   onBuzz,
   onBothBuzzed,
-  onResolve,
 }: FFFaceOffProps) {
   const {
     currentQuestion,
@@ -24,7 +22,6 @@ export default function FFFaceOff({
     faceOffPurplePlayerId,
     faceOffBuzzes,
     faceOffWinner,
-    faceOffLocked,
     players,
     pinkTeamName,
     purpleTeamName,

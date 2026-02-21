@@ -21,7 +21,7 @@ export default function FamilyFeudGameWrapper() {
   const navigate = useNavigate();
   const { roomCode } = useParams();
   const lobbyStore = useLobbyStore();
-  const { phase, timeRemaining } = useFamilyFeudStore();
+  const { phase } = useFamilyFeudStore();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const gameStartedRef = useRef(false);
 
@@ -285,7 +285,6 @@ export default function FamilyFeudGameWrapper() {
           isHost={hostPlayer}
           onBuzz={sendBuzz}
           onBothBuzzed={handleBothBuzzed}
-          onResolve={handleResolveFaceOff}
         />
       )}
       {phase === 'board-play' && (

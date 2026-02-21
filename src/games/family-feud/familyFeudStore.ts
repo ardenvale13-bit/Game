@@ -1,6 +1,6 @@
 // Family Feud - Game Store (Zustand 5)
 import { create } from 'zustand';
-import type { FFQuestion, FFAnswer, FFCategory } from './familyFeudData';
+import type { FFQuestion } from './familyFeudData';
 import { findMatchingAnswer, getRandomQuestion, resetUsedQuestions } from './familyFeudData';
 
 export type FFTeam = 'pink' | 'purple';
@@ -237,7 +237,6 @@ const useFamilyFeudStore = create<FFGameState & FFActions>((set, get) => ({
   },
 
   startGame: () => {
-    const state = get();
     resetUsedQuestions();
     set({
       phase: 'face-off',
@@ -631,7 +630,7 @@ const useFamilyFeudStore = create<FFGameState & FFActions>((set, get) => ({
   },
 
   resolveSteal: (success) => {
-    set((state) => ({
+    set(() => ({
       stealResult: success ? 'success' : 'fail',
       phase: 'round-results',
       timeRemaining: 0,
