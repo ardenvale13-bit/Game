@@ -41,6 +41,7 @@ interface LobbyActions {
   removePlayer: (id: string) => void;
   setPlayers: (players: Player[]) => void;
   updatePlayerScore: (id: string, points: number) => void;
+  updatePlayerName: (id: string, newName: string) => void;
   resetScores: () => void;
 
   // Game selection & settings
@@ -97,6 +98,12 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
   updatePlayerScore: (id, points) => set((state) => ({
     players: state.players.map(p =>
       p.id === id ? { ...p, score: p.score + points } : p
+    ),
+  })),
+
+  updatePlayerName: (id, newName) => set((state) => ({
+    players: state.players.map(p =>
+      p.id === id ? { ...p, name: newName } : p
     ),
   })),
 

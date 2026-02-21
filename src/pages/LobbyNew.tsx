@@ -9,10 +9,15 @@ import type { PresencePlayer, BroadcastEvent } from '../hooks/useRealtimeRoom';
 import { deleteRoom } from '../lib/roomService';
 import { clearPlayerSession, getPlayerSession } from '../lib/playerSession';
 
+const PLAYER_NAME_KEY = 'party_player_name';
+
 export default function Lobby() {
   const navigate = useNavigate();
   const { roomCode } = useParams();
   const [copied, setCopied] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const {
     players,
@@ -29,6 +34,7 @@ export default function Lobby() {
     setPlayers,
     isHost,
     canStartGame,
+    updatePlayerName,
   } = useLobbyStore();
 
   const hostPlayer = isHost();
@@ -114,7 +120,7 @@ export default function Lobby() {
     }
   }, [selectGame, setRoundCount, startGame, navigate, roomCode]);
 
-  const { isConnected, sendEvent } = useRealtimeRoom({
+  const { isConnected, sendEvent, updatePresence } = useRealtimeRoom({
     roomCode: roomCode || null,
     player: currentPresencePlayer,
     onPlayersSync: handlePlayersSync,
@@ -164,6 +170,41 @@ export default function Lobby() {
     clearPlayerSession();
     leaveLobby();
     navigate('/');
+  };
+
+  // Name editing
+  const startEditingName = () => {
+    const me = players.find(p => p.id === currentPlayerId);
+    if (!me) return;
+    setNameInput(me.name);
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.focus(), 50);
+  };
+
+  const confirmNameChange = () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed || !currentPlayerId) {
+      setEditingName(false);
+      return;
+    }
+    // Update store
+    updatePlayerName(currentPlayerId, trimmed);
+    // Update sessionStorage
+    sessionStorage.setItem(PLAYER_NAME_KEY, trimmed);
+    // Update presence so other players see it immediately
+    updatePresence({ name: trimmed });
+    // Also update the local presence player state so heartbeat uses new name
+    setCurrentPresencePlayer(prev => prev ? { ...prev, name: trimmed } : prev);
+    setEditingName(false);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmNameChange();
+    } else if (e.key === 'Escape') {
+      setEditingName(false);
+    }
   };
 
   const getMinPlayers = (game: GameType) => {
@@ -277,10 +318,57 @@ export default function Lobby() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                 />
               </div>
-              <span className="name">
-                {player.name}
-                {player.id === currentPlayerId && ' (you)'}
-              </span>
+              {player.id === currentPlayerId && editingName ? (
+                <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={handleNameKeyDown}
+                    onBlur={confirmNameChange}
+                    maxLength={20}
+                    style={{
+                      flex: 1,
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--accent-primary)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '4px 8px',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              ) : (
+                <span className="name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {player.name}
+                  {player.id === currentPlayerId && (
+                    <>
+                      {' (you) '}
+                      <button
+                        onClick={startEditingName}
+                        title="Edit name"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-muted)',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                          opacity: 0.7,
+                          transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+                      >
+                        ✏️
+                      </button>
+                    </>
+                  )}
+                </span>
+              )}
               {player.score > 0 && (
                 <span className="score">{player.score} pts</span>
               )}
