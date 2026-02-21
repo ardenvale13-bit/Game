@@ -10,7 +10,7 @@ export interface Player {
   score: number; // Persists across games in same session
 }
 
-export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'hangman' | 'wavelength' | 'guess-betrayal' | 'meme' | null;
+export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'hangman' | 'wavelength' | 'guess-betrayal' | 'meme' | 'familyfeud' | null;
 
 interface LobbyState {
   // Room

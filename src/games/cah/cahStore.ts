@@ -367,7 +367,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
   // Settings
   setMaxRounds: (rounds) => set({ maxRounds: rounds }),
 
-  // Card swap — players can swap 1 card every 3 rounds
+  // Card swap — players can swap 1 card every 2 rounds
   swapCard: (playerId, cardId) => {
     const state = get();
     const player = state.players.find(p => p.id === playerId);
@@ -375,7 +375,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
 
     // Check cooldown
     const lastSwap = state.swapCooldowns[playerId] || 0;
-    if (lastSwap > 0 && state.currentRound - lastSwap < 3) return;
+    if (lastSwap > 0 && state.currentRound - lastSwap < 2) return;
 
     // Find the card to replace
     if (!player.hand.find(c => c.id === cardId)) return;
@@ -402,7 +402,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
     const player = state.players.find(p => p.id === playerId);
     if (!player || player.isCzar || player.hasSubmitted) return false;
     const lastSwap = state.swapCooldowns[playerId] || 0;
-    return lastSwap === 0 || (state.currentRound - lastSwap >= 3);
+    return lastSwap === 0 || (state.currentRound - lastSwap >= 2);
   },
 
   // Helpers

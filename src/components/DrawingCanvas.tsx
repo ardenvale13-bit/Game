@@ -550,14 +550,14 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       {/* Canvas */}
       <div
         ref={containerRef}
         className="canvas-container"
         style={{
           flex: 1,
-          minHeight: '400px',
+          minHeight: '200px',
           cursor: canDraw
             ? tool === 'eraser' ? 'cell'
             : tool === 'fill' ? 'pointer'
@@ -599,7 +599,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
       {/* Tools - Only show for drawer */}
       {canDraw && (
-        <div className="tools-bar" style={{ flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+        <div className="tools-bar" style={{ flexWrap: 'wrap', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           {/* Undo / Redo */}
           <div style={{ display: 'flex', gap: '4px' }}>
             <button
