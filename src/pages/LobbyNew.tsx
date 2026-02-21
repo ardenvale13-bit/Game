@@ -353,17 +353,21 @@ export default function Lobby() {
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          fontSize: '0.75rem',
-                          color: 'var(--text-muted)',
                           padding: '2px 4px',
                           borderRadius: '4px',
                           opacity: 0.7,
                           transition: 'opacity 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
                         onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
                       >
-                        ✏️
+                        <img
+                          src="/pencil.png"
+                          alt="Edit"
+                          style={{ width: '14px', height: '14px', filter: 'brightness(0.7)' }}
+                        />
                       </button>
                     </>
                   )}

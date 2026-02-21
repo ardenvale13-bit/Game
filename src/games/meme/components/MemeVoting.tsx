@@ -1,6 +1,7 @@
 // Make It Meme - Voting Phase
 // Players see all captions on the meme and vote for the best one
 // You can't vote for your own caption
+// 2-reply templates display both lines separated
 import { useMemo } from 'react';
 import useMemeStore from '../memeStore';
 
@@ -16,12 +17,14 @@ export default function MemeVoting({ currentPlayerId, onVote }: MemeVotingProps)
     maxRounds,
     currentTemplateSrc,
     currentTemplateIsGif,
+    currentTemplateCaptionCount,
     timeRemaining,
   } = useMemeStore();
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const hasVoted = currentPlayer?.votedForPlayerId !== null;
   const votedCount = players.filter(p => p.votedForPlayerId !== null).length;
+  const needsTwoCaptions = currentTemplateCaptionCount === 2;
 
   const timerClass = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warning' : '';
 
@@ -29,7 +32,7 @@ export default function MemeVoting({ currentPlayerId, onVote }: MemeVotingProps)
   const shuffledCaptions = useMemo(() => {
     const captions = players
       .filter(p => p.caption !== null)
-      .map(p => ({ playerId: p.id, caption: p.caption! }));
+      .map(p => ({ playerId: p.id, caption: p.caption!, caption2: p.caption2 }));
     // Fisher-Yates shuffle
     for (let i = captions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -76,7 +79,16 @@ export default function MemeVoting({ currentPlayerId, onVote }: MemeVotingProps)
               onClick={() => !isDisabled && onVote(entry.playerId)}
               disabled={isDisabled}
             >
-              <div className="meme-vote-caption">"{entry.caption}"</div>
+              <div className="meme-vote-caption">
+                {needsTwoCaptions && entry.caption2 ? (
+                  <>
+                    <div className="meme-vote-reply-line">"{entry.caption}"</div>
+                    <div className="meme-vote-reply-line">"{entry.caption2}"</div>
+                  </>
+                ) : (
+                  `"${entry.caption}"`
+                )}
+              </div>
               {isOwn && <div className="meme-vote-own-tag">Yours</div>}
               {isSelected && <div className="meme-vote-selected-tag">Voted!</div>}
             </button>

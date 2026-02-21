@@ -12,7 +12,8 @@ export interface MemePlayer {
   avatarFilename: string;
   isHost: boolean;
   score: number;
-  caption: string | null;       // This player's caption for current round
+  caption: string | null;        // This player's caption for current round
+  caption2: string | null;       // Second caption (for 2-reply templates)
   votedForPlayerId: string | null; // Who this player voted for
 }
 
@@ -35,7 +36,7 @@ interface MemeState {
   currentTemplateId: string;
   currentTemplateSrc: string;
   currentTemplateIsGif: boolean;
-  currentTemplateCaptionPos: 'top' | 'bottom' | 'both';
+  currentTemplateCaptionCount: 1 | 2;
   timeRemaining: number;
   captionTime: number;     // seconds for captioning
   votingTime: number;      // seconds for voting
@@ -50,8 +51,8 @@ interface MemeActions {
   setMaxRounds: (rounds: number) => void;
 
   // Game flow (host actions)
-  startCaptionPhase: (templateId: string, templateSrc: string, isGif: boolean, captionPos: 'top' | 'bottom' | 'both') => void;
-  submitCaption: (playerId: string, caption: string) => void;
+  startCaptionPhase: (templateId: string, templateSrc: string, isGif: boolean, captionCount: 1 | 2) => void;
+  submitCaption: (playerId: string, caption: string, caption2?: string) => void;
   startVotingPhase: () => void;
   castVote: (voterId: string, targetPlayerId: string) => void;
   revealResults: () => void;
@@ -82,7 +83,7 @@ const initialState: MemeState = {
   currentTemplateId: '',
   currentTemplateSrc: '',
   currentTemplateIsGif: false,
-  currentTemplateCaptionPos: 'bottom',
+  currentTemplateCaptionCount: 1,
   timeRemaining: 30,
   captionTime: 30,
   votingTime: 20,
@@ -99,6 +100,7 @@ const useMemeStore = create<MemeState & MemeActions>((set, get) => ({
       ...p,
       score: 0,
       caption: null,
+      caption2: null,
       votedForPlayerId: null,
     }));
     set({ ...initialState, players });
@@ -106,7 +108,7 @@ const useMemeStore = create<MemeState & MemeActions>((set, get) => ({
 
   setMaxRounds: (rounds) => set({ maxRounds: rounds }),
 
-  startCaptionPhase: (templateId, templateSrc, isGif, captionPos) => {
+  startCaptionPhase: (templateId, templateSrc, isGif, captionCount) => {
     const state = get();
     const usedTemplateIds = new Set(state.usedTemplateIds);
     usedTemplateIds.add(templateId);
@@ -116,18 +118,18 @@ const useMemeStore = create<MemeState & MemeActions>((set, get) => ({
       currentTemplateId: templateId,
       currentTemplateSrc: templateSrc,
       currentTemplateIsGif: isGif,
-      currentTemplateCaptionPos: captionPos,
+      currentTemplateCaptionCount: captionCount,
       phase: 'captioning',
       timeRemaining: state.captionTime,
       usedTemplateIds,
-      players: state.players.map(p => ({ ...p, caption: null, votedForPlayerId: null })),
+      players: state.players.map(p => ({ ...p, caption: null, caption2: null, votedForPlayerId: null })),
     });
   },
 
-  submitCaption: (playerId, caption) => {
+  submitCaption: (playerId, caption, caption2) => {
     set((state) => ({
       players: state.players.map(p =>
-        p.id === playerId ? { ...p, caption } : p
+        p.id === playerId ? { ...p, caption, caption2: caption2 ?? null } : p
       ),
     }));
   },
@@ -211,10 +213,12 @@ const useMemeStore = create<MemeState & MemeActions>((set, get) => ({
 
     const winnerPlayer = state.players.find(p => p.id === winnerId);
 
-    // Build captions map
+    // Build captions map (combine caption + caption2 with separator for 2-reply)
     const captions: Record<string, string> = {};
     state.players.forEach(p => {
-      if (p.caption) captions[p.id] = p.caption;
+      if (p.caption) {
+        captions[p.id] = p.caption2 ? `${p.caption} | ${p.caption2}` : p.caption;
+      }
     });
 
     // Update scores: +1 per vote received
@@ -265,7 +269,7 @@ const useMemeStore = create<MemeState & MemeActions>((set, get) => ({
       currentTemplateId: s.currentTemplateId,
       currentTemplateSrc: s.currentTemplateSrc,
       currentTemplateIsGif: s.currentTemplateIsGif,
-      currentTemplateCaptionPos: s.currentTemplateCaptionPos,
+      currentTemplateCaptionCount: s.currentTemplateCaptionCount,
       timeRemaining: s.timeRemaining,
       captionTime: s.captionTime,
       votingTime: s.votingTime,

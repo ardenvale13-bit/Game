@@ -1,4 +1,5 @@
 /* Make It Meme - Styles */
+/* Color scheme: PINK accent */
 @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
 .meme-layout {
@@ -34,8 +35,8 @@
   font-family: 'Bangers', cursive;
   font-size: 1.4rem;
   letter-spacing: 0.05em;
-  color: var(--accent-warning);
-  text-shadow: 0 0 20px rgba(255, 170, 0, 0.4);
+  color: #ff69b4;
+  text-shadow: 0 0 20px rgba(255, 105, 180, 0.4);
 }
 
 .meme-timer {
@@ -48,7 +49,7 @@
 }
 
 .meme-timer.warning {
-  color: var(--accent-warning);
+  color: #ff69b4;
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -60,11 +61,11 @@
 /* Meme template display */
 .meme-template-card {
   background: var(--bg-card);
-  border: 2px solid rgba(255, 170, 0, 0.3);
+  border: 2px solid rgba(255, 105, 180, 0.3);
   border-radius: var(--radius-xl);
   overflow: hidden;
   margin-bottom: 20px;
-  box-shadow: 0 0 30px rgba(255, 170, 0, 0.1);
+  box-shadow: 0 0 30px rgba(255, 105, 180, 0.1);
   animation: memeSlideIn 0.4s ease-out;
 }
 
@@ -99,7 +100,7 @@
 
 .meme-image.meme-gif {
   /* GIFs play automatically - add subtle border glow to indicate animation */
-  box-shadow: inset 0 0 0 2px rgba(0, 240, 255, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(255, 105, 180, 0.2);
 }
 
 /* Caption input area */
@@ -127,8 +128,8 @@
 }
 
 .meme-caption-input:focus {
-  border-color: var(--accent-warning);
-  box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+  border-color: #ff69b4;
+  box-shadow: 0 0 15px rgba(255, 105, 180, 0.2);
 }
 
 .meme-caption-input::placeholder {
@@ -136,8 +137,8 @@
 }
 
 .meme-caption-submit {
-  background: linear-gradient(135deg, var(--accent-warning), #ff8800);
-  color: #000;
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: #fff;
   border: none;
   border-radius: var(--radius-lg);
   padding: 14px 24px;
@@ -150,7 +151,7 @@
 
 .meme-caption-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
 }
 
 .meme-caption-submit:disabled {
@@ -165,10 +166,32 @@
   margin-top: 4px;
 }
 
+/* Reply label for 2-reply templates */
+.meme-reply-label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ff69b4;
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+/* 2-reply vote display */
+.meme-vote-reply-line {
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.meme-vote-reply-line + .meme-vote-reply-line {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 /* Waiting card (after submitting caption) */
 .meme-waiting-card {
   background: var(--bg-card);
-  border: 2px solid rgba(0, 240, 255, 0.2);
+  border: 2px solid rgba(255, 105, 180, 0.2);
   border-radius: var(--radius-lg);
   padding: 20px;
   text-align: center;
@@ -216,8 +239,8 @@
 }
 
 .meme-progress-dot.done {
-  background: var(--accent-success);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  background: #ff69b4;
+  box-shadow: 0 0 8px rgba(255, 105, 180, 0.5);
 }
 
 .meme-votes-count {
@@ -250,15 +273,15 @@
 }
 
 .meme-vote-card:hover:not(.disabled):not(.own) {
-  border-color: var(--accent-warning);
+  border-color: #ff69b4;
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(255, 170, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
 }
 
 .meme-vote-card.selected {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 25px var(--glow-primary);
-  background: rgba(0, 240, 255, 0.08);
+  border-color: #ff69b4;
+  box-shadow: 0 0 25px rgba(255, 105, 180, 0.3);
+  background: rgba(255, 105, 180, 0.08);
 }
 
 .meme-vote-card.own {
@@ -292,7 +315,7 @@
 
 .meme-vote-selected-tag {
   font-size: 0.75rem;
-  color: var(--accent-primary);
+  color: #ff69b4;
   font-family: var(--font-display);
   font-weight: 600;
   white-space: nowrap;
@@ -304,12 +327,12 @@
 }
 
 .meme-winner-showcase {
-  background: linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(255, 0, 170, 0.1));
-  border: 2px solid var(--accent-warning);
+  background: linear-gradient(135deg, rgba(255, 105, 180, 0.1), rgba(255, 20, 147, 0.1));
+  border: 2px solid #ff69b4;
   border-radius: var(--radius-xl);
   overflow: hidden;
   margin-bottom: 24px;
-  box-shadow: 0 0 40px rgba(255, 170, 0, 0.15);
+  box-shadow: 0 0 40px rgba(255, 105, 180, 0.15);
   animation: winnerPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -356,8 +379,8 @@
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid var(--accent-warning);
-  box-shadow: 0 0 12px rgba(255, 170, 0, 0.4);
+  border: 2px solid #ff69b4;
+  box-shadow: 0 0 12px rgba(255, 105, 180, 0.4);
 }
 
 .meme-winner-avatar img {
@@ -370,7 +393,7 @@
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--accent-warning);
+  color: #ff69b4;
 }
 
 .meme-winner-votes {
@@ -397,8 +420,8 @@
 }
 
 .meme-caption-row.winner {
-  border: 1px solid rgba(255, 170, 0, 0.3);
-  background: rgba(255, 170, 0, 0.05);
+  border: 1px solid rgba(255, 105, 180, 0.3);
+  background: rgba(255, 105, 180, 0.05);
 }
 
 @keyframes rowSlideIn {
@@ -434,7 +457,7 @@
 .meme-caption-row-count {
   font-family: var(--font-display);
   font-weight: 700;
-  color: var(--accent-primary);
+  color: #ff69b4;
   font-size: 0.85rem;
 }
 
@@ -462,7 +485,7 @@
   font-family: 'Bangers', cursive;
   font-size: 3rem;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--accent-warning), var(--accent-secondary));
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -504,8 +527,8 @@
 .meme-podium-spot.first .meme-podium-avatar {
   width: 80px;
   height: 80px;
-  border-color: var(--accent-warning);
-  box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
+  border-color: #ff69b4;
+  box-shadow: 0 0 30px rgba(255, 105, 180, 0.4);
 }
 
 .meme-podium-spot.second .meme-podium-avatar {
@@ -539,7 +562,7 @@
   font-family: var(--font-display);
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--accent-primary);
+  color: #ff69b4;
 }
 
 .meme-podium-rank {
@@ -591,7 +614,7 @@
 .meme-standing-score {
   font-family: var(--font-display);
   font-weight: 700;
-  color: var(--accent-primary);
+  color: #ff69b4;
 }
 
 /* Best memes highlights */
@@ -603,7 +626,7 @@
   font-family: 'Bangers', cursive;
   font-size: 1.4rem;
   margin-bottom: 16px;
-  color: var(--accent-warning);
+  color: #ff69b4;
   letter-spacing: 0.02em;
 }
 

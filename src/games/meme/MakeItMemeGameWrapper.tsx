@@ -68,7 +68,7 @@ export default function MakeItMemeGameWrapper() {
       template.id,
       template.src,
       template.isGif,
-      template.captionPosition,
+      template.captionCount,
     );
 
     setTimeout(() => {
@@ -76,7 +76,7 @@ export default function MakeItMemeGameWrapper() {
         template.id,
         template.src,
         template.isGif,
-        template.captionPosition,
+        template.captionCount,
       );
     }, 100);
   }, [broadcastCaptionStart]);
@@ -170,8 +170,8 @@ export default function MakeItMemeGameWrapper() {
   }, [broadcastVotingStart, broadcastResults, broadcastGameOver, startNewRound, lobbyStore]);
 
   // Handle caption submission
-  const handleSubmitCaption = useCallback((caption: string) => {
-    sendCaption(caption);
+  const handleSubmitCaption = useCallback((caption: string, caption2?: string) => {
+    sendCaption(caption, caption2);
   }, [sendCaption]);
 
   // Handle vote

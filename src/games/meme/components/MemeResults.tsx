@@ -1,5 +1,6 @@
 // Make It Meme - Results Phase
 // Shows winning caption on the meme + vote breakdown
+// 2-reply templates: captions stored as "line1 | line2"
 import useMemeStore from '../memeStore';
 
 export default function MemeResults() {
@@ -18,6 +19,20 @@ export default function MemeResults() {
       const bVotes = latestResult.votes[b.id]?.length ?? 0;
       return bVotes - aVotes;
     });
+
+  // Helper to render a caption that might be dual (separated by " | ")
+  const renderCaption = (caption: string) => {
+    if (caption.includes(' | ')) {
+      const parts = caption.split(' | ');
+      return (
+        <>
+          <div>"{parts[0]}"</div>
+          <div>"{parts[1]}"</div>
+        </>
+      );
+    }
+    return `"${caption}"`;
+  };
 
   return (
     <div className="meme-results">
@@ -92,7 +107,7 @@ export default function MemeResults() {
                     {voteCount} vote{voteCount !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <div className="meme-caption-row-text">"{caption}"</div>
+                <div className="meme-caption-row-text">{renderCaption(caption)}</div>
                 {voterNames && (
                   <div className="meme-caption-row-voters">
                     Voted by: {voterNames}

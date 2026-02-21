@@ -1,11 +1,12 @@
 // Make It Meme - Captioning Phase
 // Players see the meme template and write their caption
+// 1-reply templates: 1 text box. 2-reply templates: 2 text boxes.
 import { useState } from 'react';
 import useMemeStore from '../memeStore';
 
 interface MemeCaptioningProps {
   currentPlayerId: string;
-  onSubmitCaption: (caption: string) => void;
+  onSubmitCaption: (caption: string, caption2?: string) => void;
 }
 
 export default function MemeCaptioning({ currentPlayerId, onSubmitCaption }: MemeCaptioningProps) {
@@ -15,21 +16,32 @@ export default function MemeCaptioning({ currentPlayerId, onSubmitCaption }: Mem
     maxRounds,
     currentTemplateSrc,
     currentTemplateIsGif,
+    currentTemplateCaptionCount,
     timeRemaining,
   } = useMemeStore();
 
   const [captionText, setCaptionText] = useState('');
+  const [caption2Text, setCaption2Text] = useState('');
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const hasSubmitted = currentPlayer?.caption !== null;
   const submittedCount = players.filter(p => p.caption !== null).length;
+  const needsTwoCaptions = currentTemplateCaptionCount === 2;
 
   const timerClass = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warning' : '';
 
   const handleSubmit = () => {
     const trimmed = captionText.trim();
     if (!trimmed || hasSubmitted) return;
-    onSubmitCaption(trimmed);
+
+    if (needsTwoCaptions) {
+      const trimmed2 = caption2Text.trim();
+      if (!trimmed2) return;
+      onSubmitCaption(trimmed, trimmed2);
+    } else {
+      onSubmitCaption(trimmed);
+    }
     setCaptionText('');
+    setCaption2Text('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -38,6 +50,10 @@ export default function MemeCaptioning({ currentPlayerId, onSubmitCaption }: Mem
       handleSubmit();
     }
   };
+
+  const canSubmit = needsTwoCaptions
+    ? captionText.trim().length > 0 && caption2Text.trim().length > 0
+    : captionText.trim().length > 0;
 
   return (
     <>
@@ -66,33 +82,68 @@ export default function MemeCaptioning({ currentPlayerId, onSubmitCaption }: Mem
       {/* Caption input */}
       {!hasSubmitted ? (
         <div className="meme-caption-input-area">
+          {needsTwoCaptions && (
+            <div className="meme-reply-label">Reply 1</div>
+          )}
           <div className="meme-caption-input-wrapper">
             <input
               type="text"
               className="meme-caption-input"
-              placeholder="Type your caption..."
+              placeholder={needsTwoCaptions ? 'First reply...' : 'Type your caption...'}
               value={captionText}
               onChange={(e) => setCaptionText(e.target.value)}
               onKeyDown={handleKeyDown}
               maxLength={120}
               autoFocus
             />
-            <button
-              className="meme-caption-submit"
-              onClick={handleSubmit}
-              disabled={!captionText.trim()}
-            >
-              Submit
-            </button>
+            {!needsTwoCaptions && (
+              <button
+                className="meme-caption-submit"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+              >
+                Submit
+              </button>
+            )}
           </div>
           <div className="meme-char-count">
             {captionText.length}/120
           </div>
+
+          {needsTwoCaptions && (
+            <>
+              <div className="meme-reply-label" style={{ marginTop: '8px' }}>Reply 2</div>
+              <div className="meme-caption-input-wrapper">
+                <input
+                  type="text"
+                  className="meme-caption-input"
+                  placeholder="Second reply..."
+                  value={caption2Text}
+                  onChange={(e) => setCaption2Text(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  maxLength={120}
+                />
+                <button
+                  className="meme-caption-submit"
+                  onClick={handleSubmit}
+                  disabled={!canSubmit}
+                >
+                  Submit
+                </button>
+              </div>
+              <div className="meme-char-count">
+                {caption2Text.length}/120
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="meme-waiting-card">
           <div className="meme-waiting-text">Caption submitted!</div>
           <div className="meme-waiting-caption">"{currentPlayer?.caption}"</div>
+          {currentPlayer?.caption2 && (
+            <div className="meme-waiting-caption">"{currentPlayer.caption2}"</div>
+          )}
         </div>
       )}
 

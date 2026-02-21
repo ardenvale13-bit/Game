@@ -34,11 +34,11 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
       // Caption phase start (new round)
       channel.on('broadcast', { event: 'meme_caption_start' }, ({ payload }) => {
         if (!payload) return;
-        const { templateId, templateSrc, isGif, captionPos, round, timeRemaining } = payload as {
+        const { templateId, templateSrc, isGif, captionCount, round, timeRemaining } = payload as {
           templateId: string;
           templateSrc: string;
           isGif: boolean;
-          captionPos: 'top' | 'bottom' | 'both';
+          captionCount: 1 | 2;
           round: number;
           timeRemaining: number;
         };
@@ -50,22 +50,26 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
           currentTemplateId: templateId,
           currentTemplateSrc: templateSrc,
           currentTemplateIsGif: isGif,
-          currentTemplateCaptionPos: captionPos,
+          currentTemplateCaptionCount: captionCount,
           phase: 'captioning' as MemePhase,
           timeRemaining,
           usedTemplateIds,
-          players: state.players.map(p => ({ ...p, caption: null, votedForPlayerId: null })),
+          players: state.players.map(p => ({ ...p, caption: null, caption2: null, votedForPlayerId: null })),
         });
       });
 
       // Caption update (someone submitted)
       channel.on('broadcast', { event: 'meme_caption_update' }, ({ payload }) => {
         if (!payload) return;
-        const { captions } = payload as { captions: Record<string, string | null> };
+        const { captions, captions2 } = payload as {
+          captions: Record<string, string | null>;
+          captions2: Record<string, string | null>;
+        };
         store.setState((state) => ({
           players: state.players.map(p => ({
             ...p,
             caption: captions[p.id] !== undefined ? captions[p.id] : p.caption,
+            caption2: captions2?.[p.id] !== undefined ? captions2[p.id] : p.caption2,
           })),
         }));
       });
@@ -73,9 +77,10 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
       // Voting phase start
       channel.on('broadcast', { event: 'meme_voting_start' }, ({ payload }) => {
         if (!payload) return;
-        const { timeRemaining, captions } = payload as {
+        const { timeRemaining, captions, captions2 } = payload as {
           timeRemaining: number;
           captions: Record<string, string | null>;
+          captions2: Record<string, string | null>;
         };
         store.setState((state) => ({
           phase: 'voting' as MemePhase,
@@ -83,6 +88,7 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
           players: state.players.map(p => ({
             ...p,
             caption: captions[p.id] !== undefined ? captions[p.id] : p.caption,
+            caption2: captions2?.[p.id] !== undefined ? captions2[p.id] : p.caption2,
           })),
         }));
       });
@@ -149,13 +155,17 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
       // Player caption submission
       channel.on('broadcast', { event: 'meme_submit_caption' }, ({ payload }) => {
         if (!payload) return;
-        const { playerId: pid, caption } = payload as { playerId: string; caption: string };
-        store.getState().submitCaption(pid, caption);
+        const { playerId: pid, caption, caption2 } = payload as { playerId: string; caption: string; caption2?: string };
+        store.getState().submitCaption(pid, caption, caption2);
 
         // Broadcast updated captions to all
         const captions: Record<string, string | null> = {};
-        store.getState().players.forEach(p => { captions[p.id] = p.caption; });
-        channel.send({ type: 'broadcast', event: 'meme_caption_update', payload: { captions } });
+        const captions2: Record<string, string | null> = {};
+        store.getState().players.forEach(p => {
+          captions[p.id] = p.caption;
+          captions2[p.id] = p.caption2;
+        });
+        channel.send({ type: 'broadcast', event: 'meme_caption_update', payload: { captions, captions2 } });
       });
 
       // Player vote
@@ -206,7 +216,7 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
 
   // --- Broadcast helpers (host only) ---
 
-  const broadcastCaptionStart = useCallback((templateId: string, templateSrc: string, isGif: boolean, captionPos: 'top' | 'bottom' | 'both') => {
+  const broadcastCaptionStart = useCallback((templateId: string, templateSrc: string, isGif: boolean, captionCount: 1 | 2) => {
     const channel = channelRef.current;
     if (!channel) return;
     const state = store.getState();
@@ -217,7 +227,7 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
         templateId,
         templateSrc,
         isGif,
-        captionPos,
+        captionCount,
         round: state.currentRound,
         timeRemaining: state.timeRemaining,
       },
@@ -229,13 +239,18 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
     if (!channel) return;
     const state = store.getState();
     const captions: Record<string, string | null> = {};
-    state.players.forEach(p => { captions[p.id] = p.caption; });
+    const captions2: Record<string, string | null> = {};
+    state.players.forEach(p => {
+      captions[p.id] = p.caption;
+      captions2[p.id] = p.caption2;
+    });
     channel.send({
       type: 'broadcast',
       event: 'meme_voting_start',
       payload: {
         timeRemaining: state.timeRemaining,
         captions,
+        captions2,
       },
     });
   }, []);
@@ -283,22 +298,26 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
 
   // --- Send helpers (non-host sends to host) ---
 
-  const sendCaption = useCallback((caption: string) => {
+  const sendCaption = useCallback((caption: string, caption2?: string) => {
     const channel = channelRef.current;
     if (!channel) return;
 
     if (isHost) {
       // Host processes locally
-      store.getState().submitCaption(playerId!, caption);
+      store.getState().submitCaption(playerId!, caption, caption2);
       // Broadcast to others
       const captions: Record<string, string | null> = {};
-      store.getState().players.forEach(p => { captions[p.id] = p.caption; });
-      channel.send({ type: 'broadcast', event: 'meme_caption_update', payload: { captions } });
+      const caps2: Record<string, string | null> = {};
+      store.getState().players.forEach(p => {
+        captions[p.id] = p.caption;
+        caps2[p.id] = p.caption2;
+      });
+      channel.send({ type: 'broadcast', event: 'meme_caption_update', payload: { captions, captions2: caps2 } });
     } else {
       channel.send({
         type: 'broadcast',
         event: 'meme_submit_caption',
-        payload: { playerId, caption },
+        payload: { playerId, caption, caption2 },
       });
     }
   }, [isHost, playerId]);
