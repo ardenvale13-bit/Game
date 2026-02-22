@@ -324,11 +324,10 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         }
       }
 
-      // Resize the canvas (this clears it)
+      // Resize the canvas bitmap (this clears it)
+      // CSS dimensions stay at 100% so the canvas stretches with its container on rotation
       canvas.width = newW;
       canvas.height = newH;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
 
       const newCtx = canvas.getContext('2d');
       if (newCtx) {
@@ -628,7 +627,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
           onTouchStart={handleStart}
           onTouchMove={handleMove}
           onTouchEnd={handleEnd}
-          style={{ touchAction: 'none' }}
+          style={{ touchAction: 'none', width: '100%', height: '100%', display: 'block' }}
         />
 
         {phase === 'word-selection' && !isCurrentPlayerDrawing() && (
