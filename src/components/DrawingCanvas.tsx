@@ -33,6 +33,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   // Replay state for non-drawers
   const replayLastPosRef = useRef<{ x: number; y: number } | null>(null);
   const lastRenderedRef = useRef(0);
+  const [replayTrigger, setReplayTrigger] = useState(0);
 
   // Undo/Redo stacks
   const [undoStack, setUndoStack] = useState<CanvasState[]>([]);
@@ -49,6 +50,9 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   } = useGameStore();
 
   const canDraw = isCurrentPlayerDrawing() && phase === 'drawing';
+  const isActiveDrawer = isCurrentPlayerDrawing(); // true even outside drawing phase
+  const isActiveDrawerRef = useRef(isActiveDrawer);
+  isActiveDrawerRef.current = isActiveDrawer;
 
   // Get canvas display dimensions
   const getCanvasRect = () => containerRef.current?.getBoundingClientRect() || null;
@@ -77,23 +81,25 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     img.src = canvasSnapshot;
   }, [canvasSnapshot, canDraw]);
 
-  // Clear canvas and reset replay on new round
+  // Clear canvas and reset replay on new round or ANY phase change away from drawing
   useEffect(() => {
-    if (phase === 'word-selection') {
+    if (phase === 'word-selection' || phase === 'round-end') {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (canvas && container) {
         const ctx = canvas.getContext('2d');
         const rect = container.getBoundingClientRect();
-        if (ctx) {
+        if (ctx && rect.width > 0 && rect.height > 0) {
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, rect.width, rect.height);
         }
       }
+      // Clear saved bitmap so resize doesn't restore old drawing
+      savedBitmapRef.current = null;
+    }
+    if (phase === 'word-selection') {
       lastRenderedRef.current = 0;
       replayLastPosRef.current = null;
-      // Clear the saved bitmap so old drawings don't restore on resize
-      savedBitmapRef.current = null;
       // Clear the store draw commands for non-host
       useGameStore.setState({ drawCommands: [] });
     }
@@ -157,7 +163,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     }
 
     lastRenderedRef.current = drawCommands.length;
-  }, [drawCommands.length, canDraw]);
+  }, [drawCommands.length, canDraw, replayTrigger]);
 
   // Save current canvas state to undo stack
   const saveToHistory = useCallback(() => {
@@ -266,20 +272,17 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canDraw, handleUndo, handleRedo]);
 
-  // Persistent bitmap ref — survives across resize calls so rotation never loses the drawing
+  // Persistent bitmap ref — only used for the DRAWER to preserve their work across resize
   const savedBitmapRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Set up canvas dimensions using ResizeObserver for reliable resize/rotation handling
+  // Set up canvas dimensions using ResizeObserver
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    let rafId: number | null = null;
-
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
-      // Skip if container has no size yet (hidden or mid-layout)
       if (rect.width < 2 || rect.height < 2) return;
 
       const dpr = window.devicePixelRatio || 1;
@@ -289,8 +292,11 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
       // Skip if canvas is already the correct size
       if (canvas.width === newW && canvas.height === newH) return;
 
-      // Save current drawing to persistent bitmap ref (only if canvas has content)
-      if (canvas.width > 0 && canvas.height > 0) {
+      const isDrawer = isActiveDrawerRef.current;
+
+      // DRAWER: save their in-progress drawing so rotation doesn't erase it
+      if (isDrawer && canvas.width > 0 && canvas.height > 0 && savedBitmapRef.current !== null) {
+        // Only update saved bitmap if there's already one (meaning we're mid-drawing)
         const saveBitmap = document.createElement('canvas');
         saveBitmap.width = canvas.width;
         saveBitmap.height = canvas.height;
@@ -299,12 +305,26 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
           tmpCtx.drawImage(canvas, 0, 0);
           savedBitmapRef.current = saveBitmap;
         }
+      } else if (isDrawer && canvas.width > 0 && canvas.height > 0) {
+        // First resize during drawing — check if canvas has non-white content
+        const tmpCtx = canvas.getContext('2d');
+        if (tmpCtx) {
+          const sample = tmpCtx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+          const hasContent = sample.data.some((v, i) => i % 4 < 3 && v < 250); // any non-white pixel
+          if (hasContent) {
+            const saveBitmap = document.createElement('canvas');
+            saveBitmap.width = canvas.width;
+            saveBitmap.height = canvas.height;
+            const tmpCtx2 = saveBitmap.getContext('2d');
+            if (tmpCtx2) {
+              tmpCtx2.drawImage(canvas, 0, 0);
+              savedBitmapRef.current = saveBitmap;
+            }
+          }
+        }
       }
 
-      const oldWidth = canvas.width;
-      const oldHeight = canvas.height;
-
-      // Resize the canvas
+      // Resize the canvas (this clears it)
       canvas.width = newW;
       canvas.height = newH;
       canvas.style.width = `${rect.width}px`;
@@ -315,36 +335,38 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         newCtx.scale(dpr, dpr);
         newCtx.lineCap = 'round';
         newCtx.lineJoin = 'round';
-
-        // Fill white background
         newCtx.fillStyle = '#FFFFFF';
         newCtx.fillRect(0, 0, rect.width, rect.height);
 
-        // Restore drawing from persistent bitmap, scaled to new dimensions
-        const bitmap = savedBitmapRef.current;
-        if (bitmap && bitmap.width > 0 && bitmap.height > 0 && oldWidth > 0 && oldHeight > 0) {
-          newCtx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, rect.width, rect.height);
+        // DRAWER: restore their saved bitmap
+        if (isDrawer) {
+          const bitmap = savedBitmapRef.current;
+          if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
+            newCtx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, rect.width, rect.height);
+          }
         }
+        // NON-DRAWER: leave white — draw commands will replay via the replay effect
+      }
+
+      // NON-DRAWER: reset replay cursor so all commands re-render on the new canvas
+      if (!isDrawer) {
+        lastRenderedRef.current = 0;
+        replayLastPosRef.current = null;
+        // Force the replay effect to re-run even if drawCommands.length hasn't changed
+        setReplayTrigger(t => t + 1);
       }
     };
 
-    // Use rAF to batch with the browser's paint cycle — no debounce delay
-    const handleResize = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(resizeCanvas);
-    };
-
-    // Initial sizing (immediate, no rAF needed)
+    // Initial sizing
     resizeCanvas();
 
-    // ResizeObserver fires when the container actually changes dimensions
-    const observer = new ResizeObserver(handleResize);
+    // ResizeObserver: fires when container dimensions actually change
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(resizeCanvas);
+    });
     observer.observe(container);
 
-    return () => {
-      observer.disconnect();
-      if (rafId) cancelAnimationFrame(rafId);
-    };
+    return () => observer.disconnect();
   }, []);
 
   // Get position from mouse/touch event
