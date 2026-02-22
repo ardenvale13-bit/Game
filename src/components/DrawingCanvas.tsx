@@ -264,33 +264,42 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canDraw, handleUndo, handleRedo]);
 
-  // Set up canvas dimensions
+  // Set up canvas dimensions using ResizeObserver for reliable resize/rotation handling
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
+      // Skip if container has no size yet (hidden or mid-layout)
+      if (rect.width < 1 || rect.height < 1) return;
+
       const dpr = window.devicePixelRatio || 1;
+      const newW = Math.round(rect.width * dpr);
+      const newH = Math.round(rect.height * dpr);
+
+      // Skip if canvas is already the correct size (avoids unnecessary redraws)
+      if (canvas.width === newW && canvas.height === newH) return;
 
       // Save current drawing as a bitmap image (scales properly unlike ImageData)
       let savedBitmap: HTMLCanvasElement | null = null;
-      if (canvas.width > 0 && canvas.height > 0) {
+      const oldWidth = canvas.width;
+      const oldHeight = canvas.height;
+      if (oldWidth > 0 && oldHeight > 0) {
         savedBitmap = document.createElement('canvas');
-        savedBitmap.width = canvas.width;
-        savedBitmap.height = canvas.height;
+        savedBitmap.width = oldWidth;
+        savedBitmap.height = oldHeight;
         const tmpCtx = savedBitmap.getContext('2d');
         if (tmpCtx) {
           tmpCtx.drawImage(canvas, 0, 0);
         }
       }
 
-      const oldWidth = canvas.width;
-      const oldHeight = canvas.height;
-
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      canvas.width = newW;
+      canvas.height = newH;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
@@ -310,17 +319,23 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
       }
     };
 
+    // Debounced resize — waits for layout to settle before redrawing
+    const debouncedResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeCanvas, 80);
+    };
+
+    // Initial sizing
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    // Also handle orientation changes (mobile rotate)
-    window.addEventListener('orientationchange', () => {
-      // Delay to let the browser finish layout after rotation
-      setTimeout(resizeCanvas, 150);
-      setTimeout(resizeCanvas, 500);
-    });
+
+    // ResizeObserver fires when the container actually changes dimensions
+    // — handles window resize, orientation change, layout shifts, everything
+    const observer = new ResizeObserver(debouncedResize);
+    observer.observe(container);
+
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('orientationchange', resizeCanvas);
+      observer.disconnect();
+      if (resizeTimer) clearTimeout(resizeTimer);
     };
   }, []);
 

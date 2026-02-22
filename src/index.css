@@ -735,12 +735,12 @@ h3 {
 /* ── Mobile Landscape ─────────────────────────────────── */
 @media (max-width: 900px) and (orientation: landscape) {
   .game-layout {
-    grid-template-columns: 1fr 180px;
+    grid-template-columns: 1fr 150px;
     grid-template-rows: auto 1fr;
     height: 100dvh;
     max-height: 100dvh;
-    padding: 4px;
-    gap: 4px;
+    padding: 3px;
+    gap: 3px;
     overflow: hidden;
   }
 
@@ -748,8 +748,8 @@ h3 {
   .game-layout .sidebar-left {
     grid-column: 1 / -1;
     flex-direction: row;
-    gap: 4px;
-    max-height: 28px;
+    gap: 3px;
+    max-height: 24px;
     overflow: hidden;
   }
 
@@ -772,21 +772,23 @@ h3 {
     min-height: 0;
     flex: 1;
     gap: 2px;
+    overflow: hidden;
   }
 
   /* Top info bar ultra-compact */
   .game-layout .main-area > .card:first-child {
-    padding: 2px 8px !important;
+    padding: 1px 6px !important;
+    flex-shrink: 0;
   }
 
   .word-hint {
-    font-size: 0.85rem;
-    padding: 2px 6px;
+    font-size: 0.8rem;
+    padding: 1px 6px;
     letter-spacing: 0.1em;
   }
 
   .timer {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   /* Chat in right column, full height */
@@ -800,6 +802,8 @@ h3 {
     max-height: none;
     min-height: 0;
     flex: 1;
+    padding: 4px;
+    gap: 3px;
   }
 
   .game-layout .sidebar-right .chat-input-container {
@@ -807,8 +811,13 @@ h3 {
   }
 
   .game-layout .sidebar-right .chat-input-container .input {
-    padding: 6px 8px;
-    font-size: 0.8rem;
+    padding: 5px 6px;
+    font-size: 0.75rem;
+  }
+
+  .game-layout .sidebar-right .chat-message {
+    padding: 3px 6px;
+    font-size: 0.75rem;
   }
 
   /* Canvas fills available space */
