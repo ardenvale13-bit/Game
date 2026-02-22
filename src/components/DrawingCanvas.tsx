@@ -92,6 +92,8 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
       }
       lastRenderedRef.current = 0;
       replayLastPosRef.current = null;
+      // Clear the saved bitmap so old drawings don't restore on resize
+      savedBitmapRef.current = null;
       // Clear the store draw commands for non-host
       useGameStore.setState({ drawCommands: [] });
     }

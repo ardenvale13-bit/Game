@@ -164,7 +164,9 @@ const initialState: GameState = {
 
 // Generate word hint (underscores with spaces)
 function generateHint(word: string): string {
-  return word.split('').map(char => char === ' ' ? '  ' : '_').join(' ');
+  // Split into words, make each word a group of underscores, join with ' / ' separator
+  // Using a visible separator because HTML collapses multiple whitespace
+  return word.split(' ').map(w => w.split('').map(() => '_').join(' ')).join('  /  ');
 }
 
 // Calculate points based on guess order
