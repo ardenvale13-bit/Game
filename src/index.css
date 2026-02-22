@@ -674,6 +674,19 @@ h3 {
     min-height: 0 !important;
   }
 
+  /* ── Drawer on mobile: hide sidebars, maximize canvas ── */
+  .game-layout.is-drawing {
+    grid-template-rows: auto 1fr;
+  }
+
+  .game-layout.is-drawing .sidebar-left {
+    display: none !important;
+  }
+
+  .game-layout.is-drawing .sidebar-right {
+    display: none !important;
+  }
+
   /* Tools bar compact on mobile */
   .tools-bar {
     padding: 4px;
@@ -824,6 +837,20 @@ h3 {
   .canvas-container {
     flex: 1;
     min-height: 0 !important;
+  }
+
+  /* ── Drawer in landscape: full width, no chat ── */
+  .game-layout.is-drawing {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .game-layout.is-drawing .sidebar-left {
+    display: none !important;
+  }
+
+  .game-layout.is-drawing .sidebar-right {
+    display: none !important;
   }
 
   /* Tools inline and tiny */

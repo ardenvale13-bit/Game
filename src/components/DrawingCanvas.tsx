@@ -264,40 +264,45 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canDraw, handleUndo, handleRedo]);
 
+  // Persistent bitmap ref — survives across resize calls so rotation never loses the drawing
+  const savedBitmapRef = useRef<HTMLCanvasElement | null>(null);
+
   // Set up canvas dimensions using ResizeObserver for reliable resize/rotation handling
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    let rafId: number | null = null;
 
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
       // Skip if container has no size yet (hidden or mid-layout)
-      if (rect.width < 1 || rect.height < 1) return;
+      if (rect.width < 2 || rect.height < 2) return;
 
       const dpr = window.devicePixelRatio || 1;
       const newW = Math.round(rect.width * dpr);
       const newH = Math.round(rect.height * dpr);
 
-      // Skip if canvas is already the correct size (avoids unnecessary redraws)
+      // Skip if canvas is already the correct size
       if (canvas.width === newW && canvas.height === newH) return;
 
-      // Save current drawing as a bitmap image (scales properly unlike ImageData)
-      let savedBitmap: HTMLCanvasElement | null = null;
-      const oldWidth = canvas.width;
-      const oldHeight = canvas.height;
-      if (oldWidth > 0 && oldHeight > 0) {
-        savedBitmap = document.createElement('canvas');
-        savedBitmap.width = oldWidth;
-        savedBitmap.height = oldHeight;
-        const tmpCtx = savedBitmap.getContext('2d');
+      // Save current drawing to persistent bitmap ref (only if canvas has content)
+      if (canvas.width > 0 && canvas.height > 0) {
+        const saveBitmap = document.createElement('canvas');
+        saveBitmap.width = canvas.width;
+        saveBitmap.height = canvas.height;
+        const tmpCtx = saveBitmap.getContext('2d');
         if (tmpCtx) {
           tmpCtx.drawImage(canvas, 0, 0);
+          savedBitmapRef.current = saveBitmap;
         }
       }
 
+      const oldWidth = canvas.width;
+      const oldHeight = canvas.height;
+
+      // Resize the canvas
       canvas.width = newW;
       canvas.height = newH;
       canvas.style.width = `${rect.width}px`;
@@ -309,33 +314,34 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         newCtx.lineCap = 'round';
         newCtx.lineJoin = 'round';
 
+        // Fill white background
         newCtx.fillStyle = '#FFFFFF';
         newCtx.fillRect(0, 0, rect.width, rect.height);
 
-        // Restore drawing scaled to new dimensions (handles rotation properly)
-        if (savedBitmap && oldWidth > 0 && oldHeight > 0) {
-          newCtx.drawImage(savedBitmap, 0, 0, oldWidth, oldHeight, 0, 0, rect.width, rect.height);
+        // Restore drawing from persistent bitmap, scaled to new dimensions
+        const bitmap = savedBitmapRef.current;
+        if (bitmap && bitmap.width > 0 && bitmap.height > 0 && oldWidth > 0 && oldHeight > 0) {
+          newCtx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, rect.width, rect.height);
         }
       }
     };
 
-    // Debounced resize — waits for layout to settle before redrawing
-    const debouncedResize = () => {
-      if (resizeTimer) clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(resizeCanvas, 80);
+    // Use rAF to batch with the browser's paint cycle — no debounce delay
+    const handleResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(resizeCanvas);
     };
 
-    // Initial sizing
+    // Initial sizing (immediate, no rAF needed)
     resizeCanvas();
 
     // ResizeObserver fires when the container actually changes dimensions
-    // — handles window resize, orientation change, layout shifts, everything
-    const observer = new ResizeObserver(debouncedResize);
+    const observer = new ResizeObserver(handleResize);
     observer.observe(container);
 
     return () => {
       observer.disconnect();
-      if (resizeTimer) clearTimeout(resizeTimer);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 

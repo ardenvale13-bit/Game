@@ -178,7 +178,7 @@ export default function PictionaryGame() {
   }
 
   return (
-    <div className="game-layout">
+    <div className={`game-layout ${isDrawing ? 'is-drawing' : ''}`}>
       {/* Left Sidebar - Players */}
       <div className="sidebar-left">
         <div className="card" style={{ padding: '12px' }}>
