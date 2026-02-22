@@ -51,7 +51,9 @@
 
 html, body, #root {
   height: 100%;
+  height: 100dvh; /* dynamic viewport height — shrinks when address bar shows */
   width: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -60,6 +62,8 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Subtle animated background */
@@ -563,21 +567,24 @@ h3 {
   grid-template-columns: 250px 1fr 300px;
   gap: 20px;
   height: 100vh;
+  height: 100dvh;
   padding: 20px;
   /* Prevent pinch-zoom glitches during gameplay */
   touch-action: pan-x pan-y;
+  overflow: hidden;
 }
 
 .game-layout .sidebar-left {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .game-layout .main-area {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   min-height: 0;
   overflow: visible;
 }
@@ -595,35 +602,41 @@ h3 {
   }
 }
 
+/* ── Mobile Portrait ──────────────────────────────────── */
 @media (max-width: 900px) {
   .game-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
-    height: auto;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 10px;
-    gap: 10px;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 6px;
+    gap: 6px;
+    overflow-y: auto;
   }
 
   .game-layout .sidebar-left {
     flex-direction: row;
     overflow-x: auto;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .game-layout .sidebar-left .card {
     min-width: fit-content;
-    padding: 8px !important;
+    padding: 6px !important;
+    font-size: 0.8rem;
   }
 
   .game-layout .main-area {
-    min-height: 360px;
+    min-height: 0;
+    flex: 1;
+    gap: 4px;
   }
 
   .game-layout .sidebar-right {
-    min-height: 150px;
-    max-height: 250px;
+    min-height: 100px;
+    max-height: 180px;
+    flex-shrink: 0;
   }
 
   /* Ensure chat input is always visible on mobile */
@@ -635,33 +648,258 @@ h3 {
 
   .game-layout .sidebar-right .chat-messages {
     flex: 1;
-    min-height: 60px;
-    max-height: 140px;
+    min-height: 40px;
+    max-height: 100px;
   }
 
   .game-layout .sidebar-right .chat-input-container {
     flex-shrink: 0;
   }
 
-  /* Tools bar compact on mobile */
-  .tools-bar {
-    padding: 6px;
-    gap: 4px;
+  /* Top info bar more compact */
+  .game-layout .main-area > .card:first-child {
+    padding: 6px 10px !important;
   }
 
-  .tool-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+  .word-hint {
+    font-size: 1.1rem;
+    padding: 6px 12px;
+  }
+
+  .timer {
+    font-size: 1.5rem;
+  }
+
+  /* Canvas takes remaining space */
+  .canvas-container {
+    flex: 1;
+    min-height: 0 !important;
+  }
+
+  /* Tools bar compact on mobile */
+  .tools-bar {
+    padding: 4px;
+    gap: 3px !important;
+    flex-wrap: wrap !important;
+    flex-shrink: 0;
+  }
+
+  .tools-bar .tool-btn,
+  .tools-bar button.tool-btn {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.85rem;
+    padding: 3px !important;
+  }
+
+  .tools-bar .tool-btn img {
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .color-swatch {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Shrink color grid on mobile portrait */
+  .tools-bar div[style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 2px !important;
+    max-width: 170px !important;
+  }
+
+  .tools-bar div[style*="gridTemplateColumns"] button {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Compact brush size buttons */
+  .tools-bar div[style*="gap: 6px"] button.tool-btn {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+  }
+
+  /* Dividers shorter */
+  .tools-bar > div[style*="width: 1px"] {
+    height: 24px !important;
+  }
+
+  /* Color picker label smaller */
+  .tools-bar label[style*="width: 42px"] {
+    width: 30px !important;
+    height: 30px !important;
   }
 }
 
-/* Lobby layout */
+/* ── Mobile Landscape ─────────────────────────────────── */
+@media (max-width: 900px) and (orientation: landscape) {
+  .game-layout {
+    grid-template-columns: 1fr 180px;
+    grid-template-rows: auto 1fr;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 4px;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  /* Sidebar-left spans full width as a thin top bar */
+  .game-layout .sidebar-left {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    gap: 4px;
+    max-height: 28px;
+    overflow: hidden;
+  }
+
+  /* Only show room/round card in landscape top bar */
+  .game-layout .sidebar-left .card:not(:first-child) {
+    display: none;
+  }
+
+  .game-layout .sidebar-left .card {
+    padding: 3px 8px !important;
+    font-size: 0.7rem;
+  }
+
+  .game-layout .sidebar-left .card h3 {
+    display: none;
+  }
+
+  /* Main area takes the left column */
+  .game-layout .main-area {
+    min-height: 0;
+    flex: 1;
+    gap: 2px;
+  }
+
+  /* Top info bar ultra-compact */
+  .game-layout .main-area > .card:first-child {
+    padding: 2px 8px !important;
+  }
+
+  .word-hint {
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .timer {
+    font-size: 1.1rem;
+  }
+
+  /* Chat in right column, full height */
+  .game-layout .sidebar-right {
+    max-height: none;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .game-layout .sidebar-right .chat-messages {
+    max-height: none;
+    min-height: 0;
+    flex: 1;
+  }
+
+  .game-layout .sidebar-right .chat-input-container {
+    padding: 4px;
+  }
+
+  .game-layout .sidebar-right .chat-input-container .input {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  /* Canvas fills available space */
+  .canvas-container {
+    flex: 1;
+    min-height: 0 !important;
+  }
+
+  /* Tools inline and tiny */
+  .tools-bar {
+    padding: 2px 4px;
+    gap: 2px !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+
+  .tools-bar .tool-btn,
+  .tools-bar button.tool-btn {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    font-size: 0.75rem;
+    padding: 2px !important;
+  }
+
+  .tools-bar .tool-btn img {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .color-swatch {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+  }
+
+  .brush-size {
+    padding: 0 2px;
+  }
+
+  .brush-size input[type="range"] {
+    width: 40px;
+  }
+
+  /* Dividers between tool groups — shorter */
+  .tools-bar > div[style*="width: 1px"] {
+    height: 16px !important;
+  }
+
+  /* Hide color grid in landscape tools — just use the color picker */
+  .tools-bar div[style*="gridTemplateColumns"] {
+    display: none !important;
+  }
+
+  /* Compact brush size buttons in landscape */
+  .tools-bar div[style*="gap: 6px"] button.tool-btn {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+  }
+}
+
+/* ── Mobile: Word selection cards ────────────────────── */
+@media (max-width: 600px) {
+  .word-options {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .word-option {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .word-options {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px;
+  }
+
+  .word-option {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+}
+
+/* ── Lobby layout ─────────────────────────────────────── */
 .lobby-layout {
   max-width: 600px;
   margin: 0 auto;
@@ -670,7 +908,7 @@ h3 {
 
 /* Home layout */
 .home-layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;

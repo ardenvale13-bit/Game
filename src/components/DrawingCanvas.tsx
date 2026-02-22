@@ -312,7 +312,16 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+    // Also handle orientation changes (mobile rotate)
+    window.addEventListener('orientationchange', () => {
+      // Delay to let the browser finish layout after rotation
+      setTimeout(resizeCanvas, 150);
+      setTimeout(resizeCanvas, 500);
+    });
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('orientationchange', resizeCanvas);
+    };
   }, []);
 
   // Get position from mouse/touch event
@@ -557,7 +566,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         className="canvas-container"
         style={{
           flex: 1,
-          minHeight: '200px',
+          minHeight: 0,
           cursor: canDraw
             ? tool === 'eraser' ? 'cell'
             : tool === 'fill' ? 'pointer'

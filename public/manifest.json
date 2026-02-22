@@ -1,0 +1,16 @@
+{
+  "name": "VVP Party Games",
+  "short_name": "Party Games",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#0a0a14",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/vvp-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
