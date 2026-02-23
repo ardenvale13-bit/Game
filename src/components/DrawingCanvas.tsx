@@ -33,7 +33,6 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   // Replay state for non-drawers
   const replayLastPosRef = useRef<{ x: number; y: number } | null>(null);
   const lastRenderedRef = useRef(0);
-  const [replayTrigger, setReplayTrigger] = useState(0);
 
   // Undo/Redo stacks
   const [undoStack, setUndoStack] = useState<CanvasState[]>([]);
@@ -50,9 +49,8 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   } = useGameStore();
 
   const canDraw = isCurrentPlayerDrawing() && phase === 'drawing';
-  const isActiveDrawer = isCurrentPlayerDrawing(); // true even outside drawing phase
-  const isActiveDrawerRef = useRef(isActiveDrawer);
-  isActiveDrawerRef.current = isActiveDrawer;
+  const canDrawRef = useRef(canDraw);
+  canDrawRef.current = canDraw;
 
   // Get canvas display dimensions
   const getCanvasRect = () => containerRef.current?.getBoundingClientRect() || null;
@@ -81,9 +79,9 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     img.src = canvasSnapshot;
   }, [canvasSnapshot, canDraw]);
 
-  // Clear canvas and reset replay on new round or ANY phase change away from drawing
+  // Clear canvas and reset replay on new round
   useEffect(() => {
-    if (phase === 'word-selection' || phase === 'round-end') {
+    if (phase === 'word-selection') {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (canvas && container) {
@@ -94,13 +92,9 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
           ctx.fillRect(0, 0, rect.width, rect.height);
         }
       }
-      // Clear saved bitmap so resize doesn't restore old drawing
       savedBitmapRef.current = null;
-    }
-    if (phase === 'word-selection') {
       lastRenderedRef.current = 0;
       replayLastPosRef.current = null;
-      // Clear the store draw commands for non-host
       useGameStore.setState({ drawCommands: [] });
     }
   }, [phase]);
@@ -163,7 +157,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     }
 
     lastRenderedRef.current = drawCommands.length;
-  }, [drawCommands.length, canDraw, replayTrigger]);
+  }, [drawCommands.length, canDraw]);
 
   // Save current canvas state to undo stack
   const saveToHistory = useCallback(() => {
@@ -275,6 +269,51 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
   // Persistent bitmap ref — only used for the DRAWER to preserve their work across resize
   const savedBitmapRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Helper: replay all draw commands directly onto the canvas (for non-drawers after resize)
+  const replayAllCommands = useCallback((ctx: CanvasRenderingContext2D, rect: DOMRect) => {
+    const cmds = useGameStore.getState().drawCommands;
+    let rPos: { x: number; y: number } | null = null;
+
+    for (const cmd of cmds) {
+      if (cmd.type === 'clear') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        rPos = null;
+      } else if (cmd.type === 'start') {
+        if (cmd.size === 0 && cmd.color) {
+          floodFill((cmd.x ?? 0) * rect.width, (cmd.y ?? 0) * rect.height, cmd.color);
+        } else {
+          const x = (cmd.x ?? 0) * rect.width;
+          const y = (cmd.y ?? 0) * rect.height;
+          rPos = { x, y };
+          ctx.strokeStyle = cmd.color || '#000000';
+          ctx.lineWidth = cmd.size || 10;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+      } else if (cmd.type === 'draw') {
+        if (rPos) {
+          const x = (cmd.x ?? 0) * rect.width;
+          const y = (cmd.y ?? 0) * rect.height;
+          ctx.beginPath();
+          ctx.moveTo(rPos.x, rPos.y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          rPos = { x, y };
+        }
+      } else if (cmd.type === 'end') {
+        rPos = null;
+      }
+    }
+
+    lastRenderedRef.current = cmds.length;
+    replayLastPosRef.current = null;
+  }, []);
+
   // Set up canvas dimensions using ResizeObserver
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -292,11 +331,10 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
       // Skip if canvas is already the correct size
       if (canvas.width === newW && canvas.height === newH) return;
 
-      const isDrawer = isActiveDrawerRef.current;
+      const isDrawer = canDrawRef.current;
 
-      // DRAWER: save their in-progress drawing so rotation doesn't erase it
-      if (isDrawer && canvas.width > 0 && canvas.height > 0 && savedBitmapRef.current !== null) {
-        // Only update saved bitmap if there's already one (meaning we're mid-drawing)
+      // DRAWER: always try to save current canvas before resize
+      if (isDrawer && canvas.width > 0 && canvas.height > 0) {
         const saveBitmap = document.createElement('canvas');
         saveBitmap.width = canvas.width;
         saveBitmap.height = canvas.height;
@@ -305,27 +343,9 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
           tmpCtx.drawImage(canvas, 0, 0);
           savedBitmapRef.current = saveBitmap;
         }
-      } else if (isDrawer && canvas.width > 0 && canvas.height > 0) {
-        // First resize during drawing — check if canvas has non-white content
-        const tmpCtx = canvas.getContext('2d');
-        if (tmpCtx) {
-          const sample = tmpCtx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
-          const hasContent = sample.data.some((v, i) => i % 4 < 3 && v < 250); // any non-white pixel
-          if (hasContent) {
-            const saveBitmap = document.createElement('canvas');
-            saveBitmap.width = canvas.width;
-            saveBitmap.height = canvas.height;
-            const tmpCtx2 = saveBitmap.getContext('2d');
-            if (tmpCtx2) {
-              tmpCtx2.drawImage(canvas, 0, 0);
-              savedBitmapRef.current = saveBitmap;
-            }
-          }
-        }
       }
 
       // Resize the canvas bitmap (this clears it)
-      // CSS dimensions stay at 100% so the canvas stretches with its container on rotation
       canvas.width = newW;
       canvas.height = newH;
 
@@ -337,22 +357,16 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         newCtx.fillStyle = '#FFFFFF';
         newCtx.fillRect(0, 0, rect.width, rect.height);
 
-        // DRAWER: restore their saved bitmap
         if (isDrawer) {
+          // DRAWER: restore their saved bitmap
           const bitmap = savedBitmapRef.current;
           if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
             newCtx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, rect.width, rect.height);
           }
+        } else {
+          // NON-DRAWER: replay all draw commands directly (no React state updates)
+          replayAllCommands(newCtx, rect);
         }
-        // NON-DRAWER: leave white — draw commands will replay via the replay effect
-      }
-
-      // NON-DRAWER: reset replay cursor so all commands re-render on the new canvas
-      if (!isDrawer) {
-        lastRenderedRef.current = 0;
-        replayLastPosRef.current = null;
-        // Force the replay effect to re-run even if drawCommands.length hasn't changed
-        setReplayTrigger(t => t + 1);
       }
     };
 
@@ -366,7 +380,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, []);
+  }, [replayAllCommands]);
 
   // Get position from mouse/touch event
   const getPosition = (e: React.MouseEvent | React.TouchEvent) => {
