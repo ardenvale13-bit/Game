@@ -33,7 +33,6 @@ export default function PictionaryGame() {
     isCurrentPlayerDrawing,
     nextRound,
     resetGame,
-    endGame,
     setRoomCode,
     setCurrentPlayer,
     addPlayer,
