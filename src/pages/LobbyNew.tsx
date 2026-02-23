@@ -212,7 +212,7 @@ export default function Lobby() {
     if (game === 'codenames') return 4;
     if (game === 'wmlt') return 3;
     if (game === 'hangman') return 2;
-    if (game === 'wavelength') return 4;
+
     if (game === 'guess-betrayal') return 4;
     if (game === 'meme') return 3;
     if (game === 'familyfeud') return 6;
@@ -226,7 +226,7 @@ export default function Lobby() {
       case 'codenames': return 'Codenames';
       case 'wmlt': return "Who's Most Likely To";
       case 'hangman': return 'Hangman';
-      case 'wavelength': return 'Wavelength';
+
       case 'guess-betrayal': return 'Guess Betrayal';
       case 'meme': return 'Make It Meme';
       case 'familyfeud': return 'fAImily Feud';
@@ -241,7 +241,7 @@ export default function Lobby() {
       case 'codenames': return '/codenames-icon.png';
       case 'wmlt': return '/wmlt-icon.png';
       case 'hangman': return '/hangman-icon.png';
-      case 'wavelength': return '/wavelength-icon.png';
+
       case 'guess-betrayal': return '/guess-betrayal-icon.png';
       case 'meme': return '/meme-icon.png';
       case 'familyfeud': return '/ff-icon.png';
@@ -388,7 +388,7 @@ export default function Lobby() {
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {(['pictionary', 'cah', 'codenames', 'wmlt', 'hangman', 'wavelength', 'guess-betrayal', 'meme', 'familyfeud'] as GameType[]).map((game) => (
+          {(['pictionary', 'cah', 'codenames', 'wmlt', 'hangman', 'guess-betrayal', 'meme', 'familyfeud'] as GameType[]).map((game) => (
             <button
               key={game}
               className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}

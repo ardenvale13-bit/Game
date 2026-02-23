@@ -8,7 +8,7 @@ import CAHGameWrapper from '../games/cah/CAHGameWrapper';
 import CodenamesGameWrapper from '../games/codenames/CodenamesGameWrapper';
 import WMLTGameWrapper from '../games/wmlt/WMLTGameWrapper';
 import HangmanGameWrapper from '../games/hangman/HangmanGameWrapper';
-import WavelengthGameWrapper from '../games/wavelength/WavelengthGameWrapper';
+
 import GuessBetrayalGameWrapper from '../games/guess-betrayal/GuessBetrayalGameWrapper';
 import MakeItMemeGameWrapper from '../games/meme/MakeItMemeGameWrapper';
 import FamilyFeudGameWrapper from '../games/family-feud/FamilyFeudGameWrapper';
@@ -34,8 +34,7 @@ export default function GameRouter() {
       return <WMLTGameWrapper />;
     case 'hangman':
       return <HangmanGameWrapper />;
-    case 'wavelength':
-      return <WavelengthGameWrapper />;
+
     case 'guess-betrayal':
       return <GuessBetrayalGameWrapper />;
     case 'meme':

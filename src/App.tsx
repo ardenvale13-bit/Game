@@ -7,7 +7,7 @@ import GameRouter from './pages/GameRouter';
 import './index.css';
 import './games/cah/cah.css';
 import './games/hangman/hangman.css';
-import './games/wavelength/wavelength.css';
+
 import './games/guess-betrayal/guess-betrayal.css';
 
 function App() {
