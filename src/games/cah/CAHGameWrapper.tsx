@@ -1,5 +1,5 @@
 // CAH Game Wrapper - Integrates with unified lobby + multiplayer sync
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../../store/lobbyStore';
 import useCAHStore from './cahStore';
@@ -43,6 +43,12 @@ export default function CAHGameWrapper() {
   const currentPlayer = cahPlayers.find(p => p.id === currentPlayerId);
   const isHost = currentPlayer?.isHost ?? false;
 
+  const handleForceEnd = useCallback(() => {
+    resetGame();
+    endLobbyGame();
+    navigate(`/lobby/${roomCode}`);
+  }, [roomCode, navigate, resetGame, endLobbyGame]);
+
   // --- Multiplayer sync ---
   const {
     isReady,
@@ -52,6 +58,7 @@ export default function CAHGameWrapper() {
     broadcastSubmissionCount,
     broadcastWinner,
     broadcastGameOver,
+    broadcastForceEnd,
     broadcastSubmitCards,
     broadcastPickWinner,
     broadcastTTS,
@@ -60,6 +67,7 @@ export default function CAHGameWrapper() {
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost,
+    onForceEnd: handleForceEnd,
   });
 
   // Initialize CAH game with lobby players (ALL clients)
@@ -291,45 +299,95 @@ export default function CAHGameWrapper() {
     navigate(`/lobby/${roomCode}`);
   };
 
+  const handleEndGame = useCallback(() => {
+    broadcastForceEnd();
+    handleForceEnd();
+  }, [broadcastForceEnd, handleForceEnd]);
+
+  // Render game controls
+  const renderControls = () => (
+    <div style={{
+      position: 'fixed', top: '8px', right: '8px', zIndex: 1000,
+      display: 'flex', gap: '6px'
+    }}>
+      <button
+        className="btn btn-ghost btn-small"
+        onClick={handleLeave}
+        style={{ fontSize: '0.75rem', padding: '4px 8px', opacity: 0.7 }}
+      >
+        ← Lobby
+      </button>
+      {isHost && (
+        <button
+          className="btn btn-small"
+          onClick={handleEndGame}
+          style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)', color: '#fff' }}
+        >
+          End Game
+        </button>
+      )}
+    </div>
+  );
+
   // Render based on phase
   switch (phase) {
     case 'lobby':
       return (
         <div className="flex items-center justify-center" style={{ minHeight: '100vh' }}>
+          {renderControls()}
           <div className="spinner" />
           <span className="ml-2">Starting game...</span>
         </div>
       );
     case 'playing':
       return (
-        <CAHPlaying
-          onSubmitCards={handleSubmitCards}
-          onSwapCard={handleSwapCard}
-          onLeave={handleLeave}
-          isHost={isHost}
-        />
+        <>
+          {renderControls()}
+          <CAHPlaying
+            onSubmitCards={handleSubmitCards}
+            onSwapCard={handleSwapCard}
+            onLeave={handleLeave}
+            isHost={isHost}
+          />
+        </>
       );
     case 'judging':
       return (
-        <CAHJudging
-          onPickWinner={handlePickWinner}
-          isHost={isHost}
-          onReadAloud={broadcastTTS}
-          onLeave={handleLeave}
-        />
+        <>
+          {renderControls()}
+          <CAHJudging
+            onPickWinner={handlePickWinner}
+            isHost={isHost}
+            onReadAloud={broadcastTTS}
+            onLeave={handleLeave}
+          />
+        </>
       );
     case 'reveal':
-      return <CAHReveal onLeave={handleLeave} />;
+      return (
+        <>
+          {renderControls()}
+          <CAHReveal onLeave={handleLeave} />
+        </>
+      );
     case 'game-over':
-      return <CAHGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />;
+      return (
+        <>
+          {renderControls()}
+          <CAHGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />
+        </>
+      );
     default:
       return (
-        <CAHPlaying
-          onSubmitCards={handleSubmitCards}
-          onSwapCard={handleSwapCard}
-          onLeave={handleLeave}
-          isHost={isHost}
-        />
+        <>
+          {renderControls()}
+          <CAHPlaying
+            onSubmitCards={handleSubmitCards}
+            onSwapCard={handleSwapCard}
+            onLeave={handleLeave}
+            isHost={isHost}
+          />
+        </>
       );
   }
 }

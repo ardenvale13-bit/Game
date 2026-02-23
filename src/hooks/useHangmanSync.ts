@@ -10,9 +10,10 @@ interface UseHangmanSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOptions) {
+export function useHangmanSync({ roomCode, playerId, isHost, onForceEnd }: UseHangmanSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useHangmanStore;
@@ -30,6 +31,11 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
 
     if (!isHost) {
       // --- NON-HOST: Listen for game state from host ---
+
+      // Force end game
+      channel.on('broadcast', { event: 'hm_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Game state update (phase, word, letters, etc.)
       channel.on('broadcast', { event: 'hm_game_state' }, ({ payload }) => {
@@ -398,6 +404,16 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
     });
   }, [isHost]);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'hm_force_end',
+      payload: {},
+    });
+  }, []);
+
   return {
     isReady,
     broadcastGameState,
@@ -407,5 +423,6 @@ export function useHangmanSync({ roomCode, playerId, isHost }: UseHangmanSyncOpt
     broadcastRoundEnd,
     broadcastNextRound,
     broadcastGameOver,
+    broadcastForceEnd,
   };
 }

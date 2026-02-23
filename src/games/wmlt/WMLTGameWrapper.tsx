@@ -26,17 +26,25 @@ export default function WMLTGameWrapper() {
   const currentPlayerId = lobbyStore.currentPlayerId;
   const hostPlayer = lobbyStore.isHost();
 
+  const handleForceEnd = useCallback(() => {
+    wmltStore.getState().reset();
+    lobbyStore.endGame();
+    navigate(`/lobby/${roomCode}`);
+  }, [roomCode, navigate, lobbyStore]);
+
   const {
     isReady,
     broadcastRoundStart,
     broadcastResults,
     broadcastTimerSync,
     broadcastGameOver,
+    broadcastForceEnd,
     sendVote,
   } = useWMLTSync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost: hostPlayer,
+    onForceEnd: handleForceEnd,
   });
 
   // Initialize store from lobby
@@ -152,6 +160,12 @@ export default function WMLTGameWrapper() {
     sendVote(targetId);
   }, [sendVote]);
 
+  // End game (host only)
+  const handleEndGame = useCallback(() => {
+    broadcastForceEnd();
+    handleForceEnd();
+  }, [broadcastForceEnd, handleForceEnd]);
+
   // Play again
   const handlePlayAgain = useCallback(() => {
     if (hostPlayer) {
@@ -186,6 +200,29 @@ export default function WMLTGameWrapper() {
 
   return (
     <div className="wmlt-layout">
+      {/* Game Controls */}
+      <div style={{
+        position: 'fixed', top: '8px', right: '8px', zIndex: 1000,
+        display: 'flex', gap: '6px'
+      }}>
+        <button
+          className="btn btn-ghost btn-small"
+          onClick={handleBackToLobby}
+          style={{ fontSize: '0.75rem', padding: '4px 8px', opacity: 0.7 }}
+        >
+          ← Lobby
+        </button>
+        {hostPlayer && (
+          <button
+            className="btn btn-small"
+            onClick={handleEndGame}
+            style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)', color: '#fff' }}
+          >
+            End Game
+          </button>
+        )}
+      </div>
+
       {phase === 'voting' && (
         <WMLTVoting
           currentPlayerId={currentPlayerId || ''}

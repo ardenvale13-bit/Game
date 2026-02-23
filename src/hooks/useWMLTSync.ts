@@ -10,9 +10,10 @@ interface UseWMLTSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useWMLTSync({ roomCode, playerId, isHost }: UseWMLTSyncOptions) {
+export function useWMLTSync({ roomCode, playerId, isHost, onForceEnd }: UseWMLTSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useWMLTStore;
@@ -30,6 +31,11 @@ export function useWMLTSync({ roomCode, playerId, isHost }: UseWMLTSyncOptions) 
 
     if (!isHost) {
       // --- NON-HOST LISTENERS ---
+
+      // Force end game
+      channel.on('broadcast', { event: 'wmlt_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Round start (prompt, round number, timer)
       channel.on('broadcast', { event: 'wmlt_round_start' }, ({ payload }) => {
@@ -217,6 +223,16 @@ export function useWMLTSync({ roomCode, playerId, isHost }: UseWMLTSyncOptions) 
     });
   }, []);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'wmlt_force_end',
+      payload: {},
+    });
+  }, []);
+
   // --- Send helpers (non-host sends to host) ---
 
   const sendVote = useCallback((targetId: string) => {
@@ -245,6 +261,7 @@ export function useWMLTSync({ roomCode, playerId, isHost }: UseWMLTSyncOptions) 
     broadcastResults,
     broadcastTimerSync,
     broadcastGameOver,
+    broadcastForceEnd,
     sendVote,
   };
 }

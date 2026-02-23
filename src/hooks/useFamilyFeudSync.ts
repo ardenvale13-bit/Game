@@ -10,9 +10,10 @@ interface UseFamilyFeudSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useFamilyFeudSync({ roomCode, playerId, isHost }: UseFamilyFeudSyncOptions) {
+export function useFamilyFeudSync({ roomCode, playerId, isHost, onForceEnd }: UseFamilyFeudSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useFamilyFeudStore;
@@ -30,6 +31,11 @@ export function useFamilyFeudSync({ roomCode, playerId, isHost }: UseFamilyFeudS
 
     if (!isHost) {
       // --- NON-HOST LISTENERS ---
+
+      // Force end game
+      channel.on('broadcast', { event: 'ff_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Team setup phase
       channel.on('broadcast', { event: 'ff_team_setup' }, ({ payload }) => {
@@ -299,6 +305,16 @@ export function useFamilyFeudSync({ roomCode, playerId, isHost }: UseFamilyFeudS
     });
   }, []);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'ff_force_end',
+      payload: {},
+    });
+  }, []);
+
   // --- Send helpers (both host and non-host) ---
 
   const sendAssignTeam = useCallback((pid: string, team: FFTeam | null) => {
@@ -398,6 +414,7 @@ export function useFamilyFeudSync({ roomCode, playerId, isHost }: UseFamilyFeudS
     broadcastBoardState,
     broadcastStealResult,
     broadcastTimerSync,
+    broadcastForceEnd,
     sendAssignTeam,
     sendTeamName,
     sendBuzz,

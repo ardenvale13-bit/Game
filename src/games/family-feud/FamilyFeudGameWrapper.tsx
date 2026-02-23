@@ -28,12 +28,19 @@ export default function FamilyFeudGameWrapper() {
   const currentPlayerId = lobbyStore.currentPlayerId;
   const hostPlayer = lobbyStore.isHost();
 
+  const handleForceEnd = useCallback(() => {
+    ffStore.getState().resetGame();
+    lobbyStore.endGame();
+    navigate(`/lobby/${roomCode}`);
+  }, [roomCode, navigate, lobbyStore]);
+
   const {
     isReady,
     broadcastPhaseState,
     broadcastTeamUpdate,
     broadcastBoardState,
     broadcastTimerSync,
+    broadcastForceEnd,
     sendAssignTeam,
     sendTeamName,
     sendBuzz,
@@ -43,6 +50,7 @@ export default function FamilyFeudGameWrapper() {
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost: hostPlayer,
+    onForceEnd: handleForceEnd,
   });
 
   // Initialize store from lobby
@@ -258,6 +266,37 @@ export default function FamilyFeudGameWrapper() {
     navigate(`/lobby/${roomCode}`);
   }, [roomCode, navigate, lobbyStore]);
 
+  // End game (host only)
+  const handleEndGame = useCallback(() => {
+    broadcastForceEnd();
+    handleForceEnd();
+  }, [broadcastForceEnd, handleForceEnd]);
+
+  // Render game controls
+  const renderControls = () => (
+    <div style={{
+      position: 'fixed', top: '8px', right: '8px', zIndex: 1000,
+      display: 'flex', gap: '6px'
+    }}>
+      <button
+        className="btn btn-ghost btn-small"
+        onClick={handleBackToLobby}
+        style={{ fontSize: '0.75rem', padding: '4px 8px', opacity: 0.7 }}
+      >
+        ← Lobby
+      </button>
+      {hostPlayer && (
+        <button
+          className="btn btn-small"
+          onClick={handleEndGame}
+          style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)', color: '#fff' }}
+        >
+          End Game
+        </button>
+      )}
+    </div>
+  );
+
   // Loading state
   if (!isReady) {
     return (
@@ -270,6 +309,7 @@ export default function FamilyFeudGameWrapper() {
 
   return (
     <div className="ff-layout">
+      {renderControls()}
       {phase === 'team-setup' && (
         <FFTeamSetup
           currentPlayerId={currentPlayerId || ''}

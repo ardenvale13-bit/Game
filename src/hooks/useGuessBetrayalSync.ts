@@ -10,9 +10,10 @@ interface UseSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useGuessBetrayalSync({ roomCode, playerId, isHost }: UseSyncOptions) {
+export function useGuessBetrayalSync({ roomCode, playerId, isHost, onForceEnd }: UseSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useGuessBetrayalStore;
@@ -27,6 +28,11 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost }: UseSyncOpti
 
     if (!isHost) {
       // NON-HOST listeners
+
+      // Force end game
+      channel.on('broadcast', { event: 'gb_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Round start — question, phase, timer
       channel.on('broadcast', { event: 'gb_round_start' }, ({ payload }) => {
@@ -237,6 +243,16 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost }: UseSyncOpti
     });
   }, [isHost]);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'gb_force_end',
+      payload: {},
+    });
+  }, []);
+
   // Non-host broadcasts
   const broadcastSubmitAnswer = useCallback((answer: string) => {
     const channel = channelRef.current;
@@ -266,6 +282,7 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost }: UseSyncOpti
     broadcastAnswerCount,
     broadcastResults,
     broadcastGameOver,
+    broadcastForceEnd,
     broadcastSubmitAnswer,
     broadcastSubmitGuesses,
     channel: channelRef,

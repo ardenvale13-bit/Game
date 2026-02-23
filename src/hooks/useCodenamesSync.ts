@@ -11,9 +11,10 @@ interface UseCodenamesSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyncOptions) {
+export function useCodenamesSync({ roomCode, playerId, isHost, onForceEnd }: UseCodenamesSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useCodenamesStore;
@@ -31,6 +32,11 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
 
     if (!isHost) {
       // === NON-HOST LISTENERS ===
+
+      // Force end game
+      channel.on('broadcast', { event: 'cn_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Full game state sync (team setup, game start, etc.)
       channel.on('broadcast', { event: 'cn_game_state' }, ({ payload }) => {
@@ -360,6 +366,15 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
     });
   }, [isHost]);
 
+  const broadcastForceEnd = useCallback(() => {
+    if (!channelRef.current) return;
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'cn_force_end',
+      payload: {},
+    });
+  }, []);
+
   // Non-host sends actions to host
   const sendJoinTeam = useCallback((team: TeamColor, role: PlayerRole) => {
     if (!channelRef.current || !playerId) return;
@@ -497,6 +512,7 @@ export function useCodenamesSync({ roomCode, playerId, isHost }: UseCodenamesSyn
     broadcastTeamUpdate,
     broadcastTimerToggle,
     broadcastTimerTick,
+    broadcastForceEnd,
     sendJoinTeam,
     sendLeaveTeam,
     sendVoteCard,

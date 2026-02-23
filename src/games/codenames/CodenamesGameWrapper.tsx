@@ -1,5 +1,5 @@
 // Codenames — Main game orchestrator
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useLobbyStore from '../../store/lobbyStore';
 import useCodenamesStore from './codenamesStore';
@@ -83,11 +83,18 @@ export default function CodenamesGameWrapper() {
     useCodenamesStore.setState({ phase: 'team-setup' });
   }, [roomCode, currentPlayerId]);
 
+  const handleForceEnd = useCallback(() => {
+    cn.resetGame();
+    lobby.endGame();
+    navigate(`/lobby/${roomCode}`);
+  }, [roomCode, navigate, cn, lobby]);
+
   // Sync hook
   const {
     broadcastGameState,
     broadcastTimerToggle,
     broadcastTimerTick,
+    broadcastForceEnd,
     sendJoinTeam,
     sendLeaveTeam,
     sendVoteCard,
@@ -98,6 +105,7 @@ export default function CodenamesGameWrapper() {
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost,
+    onForceEnd: handleForceEnd,
   });
 
   // Timer effect — host ticks and broadcasts
@@ -200,30 +208,67 @@ export default function CodenamesGameWrapper() {
     navigate(`/lobby/${roomCode}`);
   };
 
+  const handleEndGame = useCallback(() => {
+    broadcastForceEnd();
+    handleForceEnd();
+  }, [broadcastForceEnd, handleForceEnd]);
+
+  // Render game controls
+  const renderControls = () => (
+    <div style={{
+      position: 'fixed', top: '8px', right: '8px', zIndex: 1000,
+      display: 'flex', gap: '6px'
+    }}>
+      <button
+        className="btn btn-ghost btn-small"
+        onClick={handleBackToLobby}
+        style={{ fontSize: '0.75rem', padding: '4px 8px', opacity: 0.7 }}
+      >
+        ← Lobby
+      </button>
+      {isHost && (
+        <button
+          className="btn btn-small"
+          onClick={handleEndGame}
+          style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)', color: '#fff' }}
+        >
+          End Game
+        </button>
+      )}
+    </div>
+  );
+
   // Render based on phase
   if (cn.phase === 'team-setup') {
     return (
-      <CodenamesTeamSetup
-        onJoinTeam={handleJoinTeam}
-        onLeaveTeam={handleLeaveTeam}
-        onStart={handleStartGame}
-        onTimerToggle={handleTimerToggle}
-      />
+      <>
+        {renderControls()}
+        <CodenamesTeamSetup
+          onJoinTeam={handleJoinTeam}
+          onLeaveTeam={handleLeaveTeam}
+          onStart={handleStartGame}
+          onTimerToggle={handleTimerToggle}
+        />
+      </>
     );
   }
 
   if (cn.phase === 'game-over') {
     return (
-      <CodenamesGameOver
-        onPlayAgain={handlePlayAgain}
-        onBackToLobby={handleBackToLobby}
-      />
+      <>
+        {renderControls()}
+        <CodenamesGameOver
+          onPlayAgain={handlePlayAgain}
+          onBackToLobby={handleBackToLobby}
+        />
+      </>
     );
   }
 
   // Main game view
   return (
     <div className="cn-layout">
+      {renderControls()}
       {/* Clue Announcement Overlay */}
       {announcedClue && (
         <div className={`cn-clue-announce-overlay ${clueVisible ? 'visible' : 'fading'}`}>

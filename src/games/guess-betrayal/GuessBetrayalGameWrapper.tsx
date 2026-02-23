@@ -45,6 +45,12 @@ export default function GuessBetrayalGameWrapper() {
   const currentPlayer = gbPlayers.find(p => p.id === currentPlayerId);
   const isHost = currentPlayer?.isHost ?? false;
 
+  const handleForceEnd = () => {
+    resetGame();
+    endLobbyGame();
+    navigate(`/lobby/${roomCode}`);
+  };
+
   const {
     isReady,
     broadcastRoundStart,
@@ -53,12 +59,14 @@ export default function GuessBetrayalGameWrapper() {
     broadcastAnswerCount,
     broadcastResults,
     broadcastGameOver,
+    broadcastForceEnd,
     broadcastSubmitAnswer,
     broadcastSubmitGuesses,
   } = useGuessBetrayalSync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost,
+    onForceEnd: handleForceEnd,
   });
 
   // Initialize with lobby players
@@ -271,35 +279,83 @@ export default function GuessBetrayalGameWrapper() {
     navigate(`/lobby/${roomCode}`);
   };
 
+  const handleEndGame = () => {
+    broadcastForceEnd();
+    handleForceEnd();
+  };
+
+  // Render game controls
+  const renderControls = () => (
+    <div style={{
+      position: 'fixed', top: '8px', right: '8px', zIndex: 1000,
+      display: 'flex', gap: '6px'
+    }}>
+      <button
+        className="btn btn-ghost btn-small"
+        onClick={handleLeave}
+        style={{ fontSize: '0.75rem', padding: '4px 8px', opacity: 0.7 }}
+      >
+        ← Lobby
+      </button>
+      {isHost && (
+        <button
+          className="btn btn-small"
+          onClick={handleEndGame}
+          style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)', color: '#fff' }}
+        >
+          End Game
+        </button>
+      )}
+    </div>
+  );
+
   switch (phase) {
     case 'lobby':
       return (
         <div className="gb-loading">
+          {renderControls()}
           <div className="spinner" />
           <span>Starting game...</span>
         </div>
       );
     case 'answering':
       return (
-        <GBAnswering
-          onSubmitAnswer={handleSubmitAnswer}
-          onLeave={handleLeave}
-        />
+        <>
+          {renderControls()}
+          <GBAnswering
+            onSubmitAnswer={handleSubmitAnswer}
+            onLeave={handleLeave}
+          />
+        </>
       );
     case 'guessing':
       return (
-        <GBGuessing
-          onSubmitGuesses={handleSubmitGuesses}
-          onLeave={handleLeave}
-        />
+        <>
+          {renderControls()}
+          <GBGuessing
+            onSubmitGuesses={handleSubmitGuesses}
+            onLeave={handleLeave}
+          />
+        </>
       );
     case 'results':
-      return <GBResults onLeave={handleLeave} />;
+      return (
+        <>
+          {renderControls()}
+          <GBResults onLeave={handleLeave} />
+        </>
+      );
     case 'game-over':
-      return <GBGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />;
+      return (
+        <>
+          {renderControls()}
+          <GBGameOver onPlayAgain={handlePlayAgain} onLeave={handleLeave} />
+        </>
+      );
     default:
       return (
         <div className="gb-loading">
+          {renderControls()}
           <div className="spinner" />
           <span>Loading...</span>
         </div>

@@ -10,9 +10,10 @@ interface UseMemeSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) {
+export function useMemeSync({ roomCode, playerId, isHost, onForceEnd }: UseMemeSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useMemeStore;
@@ -30,6 +31,11 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
 
     if (!isHost) {
       // --- NON-HOST LISTENERS ---
+
+      // Force end game
+      channel.on('broadcast', { event: 'meme_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Caption phase start (new round)
       channel.on('broadcast', { event: 'meme_caption_start' }, ({ payload }) => {
@@ -296,6 +302,16 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
     });
   }, []);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'meme_force_end',
+      payload: {},
+    });
+  }, []);
+
   // --- Send helpers (non-host sends to host) ---
 
   const sendCaption = useCallback((caption: string, caption2?: string) => {
@@ -349,6 +365,7 @@ export function useMemeSync({ roomCode, playerId, isHost }: UseMemeSyncOptions) 
     broadcastResults,
     broadcastTimerSync,
     broadcastGameOver,
+    broadcastForceEnd,
     sendCaption,
     sendVote,
   };

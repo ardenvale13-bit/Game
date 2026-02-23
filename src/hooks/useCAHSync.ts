@@ -12,9 +12,10 @@ interface UseCAHSyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
+export function useCAHSync({ roomCode, playerId, isHost, onForceEnd }: UseCAHSyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useCAHStore;
@@ -32,6 +33,11 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
 
     if (!isHost) {
       // --- NON-HOST: Listen for game state from host ---
+
+      // Force end game
+      channel.on('broadcast', { event: 'cah_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
 
       // Round start — black card, czar, hands, etc. (single atomic broadcast)
       channel.on('broadcast', { event: 'cah_round_start' }, ({ payload }) => {
@@ -431,6 +437,16 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     });
   }, [isHost]);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'cah_force_end',
+      payload: {},
+    });
+  }, []);
+
   // TTS read-aloud (czar triggers, everyone hears)
   const broadcastTTS = useCallback(async (text: string) => {
     const channel = channelRef.current;
@@ -504,6 +520,7 @@ export function useCAHSync({ roomCode, playerId, isHost }: UseCAHSyncOptions) {
     broadcastSubmissionCount,
     broadcastWinner,
     broadcastGameOver,
+    broadcastForceEnd,
     broadcastSubmitCards,
     broadcastPickWinner,
     broadcastTTS,

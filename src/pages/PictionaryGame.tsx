@@ -47,6 +47,12 @@ export default function PictionaryGame() {
   const isHost = currentPlayer?.isHost ?? false;
 
   // --- Multiplayer sync ---
+  const handleForceEnd = () => {
+    resetGame();
+    endLobbyGame();
+    navigate(`/lobby/${roomCode}`);
+  };
+
   const {
     isReady,
     broadcastGameState,
@@ -56,10 +62,12 @@ export default function PictionaryGame() {
     broadcastRoundEnd,
     broadcastChatMessage,
     broadcastSnapshot,
+    broadcastForceEnd,
   } = usePictionarySync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
     isHost,
+    onForceEnd: handleForceEnd,
   });
 
   // Initialize game with lobby players (all clients)
@@ -161,6 +169,11 @@ export default function PictionaryGame() {
     navigate(`/lobby/${roomCode}`);
   };
 
+  const handleEndGame = () => {
+    broadcastForceEnd();
+    handleForceEnd();
+  };
+
   const getTimerClass = () => {
     if (timeRemaining <= 10) return 'timer danger';
     if (timeRemaining <= 20) return 'timer warning';
@@ -196,10 +209,18 @@ export default function PictionaryGame() {
           <PlayerList />
         </div>
 
+        <button
+          className="btn btn-ghost w-full"
+          onClick={handleLeave}
+          style={{ marginTop: '8px', fontSize: '0.85rem' }}
+        >
+          ← Back to Lobby
+        </button>
+
         {isHost && (
           <button
             className="btn btn-secondary w-full"
-            onClick={endGame}
+            onClick={handleEndGame}
             style={{ marginTop: '8px', fontSize: '0.85rem' }}
           >
             End Game

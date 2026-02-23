@@ -85,8 +85,8 @@ interface GBActions {
   getLeaderboard: () => GBPlayer[];
 }
 
-const ANSWER_TIME = 30;
-const GUESS_TIME = 45;
+const ANSWER_TIME = 50;
+const GUESS_TIME = 65;
 
 const initialState: GBGameState = {
   roomCode: null,

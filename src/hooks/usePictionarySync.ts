@@ -10,9 +10,10 @@ interface UsePictionarySyncOptions {
   roomCode: string | null;
   playerId: string | null;
   isHost: boolean;
+  onForceEnd?: () => void;
 }
 
-export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionarySyncOptions) {
+export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: UsePictionarySyncOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useGameStore;
@@ -27,6 +28,11 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
       config: {
         broadcast: { self: false },
       },
+    });
+
+    // --- FORCE END EVENT (all clients listen) ---
+    channel.on('broadcast', { event: 'pict_force_end' }, () => {
+      if (onForceEnd) onForceEnd();
     });
 
     // --- DRAWING EVENTS (all clients listen) ---
@@ -375,6 +381,16 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
     });
   }, []);
 
+  const broadcastForceEnd = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'pict_force_end',
+      payload: {},
+    });
+  }, []);
+
   return {
     isReady,
     broadcastGameState,
@@ -386,6 +402,7 @@ export function usePictionarySync({ roomCode, playerId, isHost }: UsePictionaryS
     broadcastRoundEnd,
     broadcastChatMessage,
     broadcastSnapshot,
+    broadcastForceEnd,
     channel: channelRef,
   };
 }

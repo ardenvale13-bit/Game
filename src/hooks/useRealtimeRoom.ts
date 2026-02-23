@@ -44,12 +44,16 @@ export function useRealtimeRoom({
   // wipe the local player list with an empty array.
   const hasTrackedRef = useRef(false);
 
+  // Keep latest player data in a ref so heartbeat and callbacks always use current data
+  const playerRef = useRef(player);
+
   // Stable refs for callbacks to avoid re-subscribing
   const onPlayersSyncRef = useRef(onPlayersSync);
   const onPlayerJoinRef = useRef(onPlayerJoin);
   const onPlayerLeaveRef = useRef(onPlayerLeave);
   const onBroadcastRef = useRef(onBroadcast);
 
+  useEffect(() => { playerRef.current = player; }, [player]);
   useEffect(() => { onPlayersSyncRef.current = onPlayersSync; }, [onPlayersSync]);
   useEffect(() => { onPlayerJoinRef.current = onPlayerJoin; }, [onPlayerJoin]);
   useEffect(() => { onPlayerLeaveRef.current = onPlayerLeave; }, [onPlayerLeave]);
@@ -166,16 +170,16 @@ export function useRealtimeRoom({
     // Supabase presence has a 30s heartbeat; we re-track every 25s
     // so our presence never expires even if a sync was missed.
     const heartbeatInterval = setInterval(async () => {
-      if (hasTrackedRef.current && channelRef.current) {
+      if (hasTrackedRef.current && channelRef.current && playerRef.current) {
         try {
           await channelRef.current.track({
-            id: player.id,
-            name: player.name,
-            avatarId: player.avatarId,
-            avatarFilename: player.avatarFilename,
-            isHost: player.isHost,
-            score: player.score,
-            joinedAt: player.joinedAt || Date.now(),
+            id: playerRef.current.id,
+            name: playerRef.current.name,
+            avatarId: playerRef.current.avatarId,
+            avatarFilename: playerRef.current.avatarFilename,
+            isHost: playerRef.current.isHost,
+            score: playerRef.current.score,
+            joinedAt: playerRef.current.joinedAt || Date.now(),
           });
         } catch {
           // Silent fail — next heartbeat will retry
@@ -197,7 +201,7 @@ export function useRealtimeRoom({
   // Send a broadcast event to all other clients
   const sendEvent = useCallback((type: string, payload: Record<string, unknown> = {}) => {
     const channel = channelRef.current;
-    if (!channel || !player) return;
+    if (!channel || !playerRef.current) return;
 
     channel.send({
       type: 'broadcast',
@@ -205,27 +209,27 @@ export function useRealtimeRoom({
       payload: {
         type,
         payload,
-        senderId: player.id,
+        senderId: playerRef.current.id,
       },
     });
-  }, [player?.id]);
+  }, []);
 
   // Update presence data (e.g., score changes)
   const updatePresence = useCallback(async (updates: Partial<PresencePlayer>) => {
     const channel = channelRef.current;
-    if (!channel || !player) return;
+    if (!channel || !playerRef.current) return;
 
     await channel.track({
-      id: player.id,
-      name: player.name,
-      avatarId: player.avatarId,
-      avatarFilename: player.avatarFilename,
-      isHost: player.isHost,
-      score: player.score,
-      joinedAt: player.joinedAt || Date.now(),
+      id: playerRef.current.id,
+      name: playerRef.current.name,
+      avatarId: playerRef.current.avatarId,
+      avatarFilename: playerRef.current.avatarFilename,
+      isHost: playerRef.current.isHost,
+      score: playerRef.current.score,
+      joinedAt: playerRef.current.joinedAt || Date.now(),
       ...updates,
     });
-  }, [player]);
+  }, []);
 
   return {
     isConnected,
