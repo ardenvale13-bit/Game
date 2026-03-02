@@ -62,7 +62,7 @@ interface GWActions {
   confirmChoice: (charId: string) => void;
   askQuestion: (askerId: string, askerName: string, question: string) => void;
   answerQuestion: (answer: 'yes' | 'no') => void;
-  makeGuess: (guesser: GWPlayer, charId: string) => void;
+  makeGuess: (guesser: GWPlayer, charId: string) => boolean;
   eliminateCharacter: (charId: string) => void;
   endRound: (winner: { playerId: string; playerName: string } | null) => void;
   endGame: () => void;

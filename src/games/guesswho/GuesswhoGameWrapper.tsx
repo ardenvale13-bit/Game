@@ -68,7 +68,6 @@ export default function GuesswhoGameWrapper() {
 
   // Start a new round (host only)
   const startNewRound = useCallback(() => {
-    const state = gwStore.getState();
     gwStore.getState().startRound();
 
     setTimeout(() => {
