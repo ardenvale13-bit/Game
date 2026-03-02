@@ -7,11 +7,14 @@ import PictionaryGame from './PictionaryGame';
 import CAHGameWrapper from '../games/cah/CAHGameWrapper';
 import CodenamesGameWrapper from '../games/codenames/CodenamesGameWrapper';
 import WMLTGameWrapper from '../games/wmlt/WMLTGameWrapper';
+import WYRGameWrapper from '../games/wyr/WYRGameWrapper';
 import HangmanGameWrapper from '../games/hangman/HangmanGameWrapper';
 
 import GuessBetrayalGameWrapper from '../games/guess-betrayal/GuessBetrayalGameWrapper';
 import MakeItMemeGameWrapper from '../games/meme/MakeItMemeGameWrapper';
 import FamilyFeudGameWrapper from '../games/family-feud/FamilyFeudGameWrapper';
+import GuesswhoGameWrapper from '../games/guesswho/GuesswhoGameWrapper';
+import UnoGameWrapper from '../games/uno/UnoGameWrapper';
 
 export default function GameRouter() {
   const { game, roomCode } = useParams();
@@ -32,6 +35,8 @@ export default function GameRouter() {
       return <CodenamesGameWrapper />;
     case 'wmlt':
       return <WMLTGameWrapper />;
+    case 'wyr':
+      return <WYRGameWrapper />;
     case 'hangman':
       return <HangmanGameWrapper />;
 
@@ -41,6 +46,10 @@ export default function GameRouter() {
       return <MakeItMemeGameWrapper />;
     case 'familyfeud':
       return <FamilyFeudGameWrapper />;
+    case 'guesswho':
+      return <GuesswhoGameWrapper />;
+    case 'uno':
+      return <UnoGameWrapper />;
     default:
       return <Navigate to={`/lobby/${roomCode}`} replace />;
   }

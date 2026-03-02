@@ -211,7 +211,10 @@ export default function Lobby() {
     if (game === 'cah') return 3;
     if (game === 'codenames') return 4;
     if (game === 'wmlt') return 3;
+    if (game === 'wyr') return 2;
     if (game === 'hangman') return 2;
+    if (game === 'guesswho') return 3;
+    if (game === 'uno') return 2;
 
     if (game === 'guess-betrayal') return 4;
     if (game === 'meme') return 3;
@@ -225,7 +228,10 @@ export default function Lobby() {
       case 'cah': return 'Cards Against Humanity';
       case 'codenames': return 'Codenames';
       case 'wmlt': return "Who's Most Likely To";
+      case 'wyr': return 'Would You Rather';
       case 'hangman': return 'Hangman';
+      case 'guesswho': return 'Guess Who?';
+      case 'uno': return 'Uno';
 
       case 'guess-betrayal': return 'Guess Betrayal';
       case 'meme': return 'Make It Meme';
@@ -240,7 +246,10 @@ export default function Lobby() {
       case 'cah': return '/cah-icon.png';
       case 'codenames': return '/codenames-icon.png';
       case 'wmlt': return '/wmlt-icon.png';
+      case 'wyr': return '/wyr-icon.png';
       case 'hangman': return '/hangman-icon.png';
+      case 'guesswho': return '/guesswho-icon.png';
+      case 'uno': return '/uno-icon.png';
 
       case 'guess-betrayal': return '/guess-betrayal-icon.png';
       case 'meme': return '/meme-icon.png';
@@ -388,7 +397,7 @@ export default function Lobby() {
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {(['pictionary', 'cah', 'codenames', 'wmlt', 'hangman', 'guess-betrayal', 'meme', 'familyfeud'] as GameType[]).map((game) => (
+          {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'guesswho', 'uno'] as GameType[]).map((game) => (
             <button
               key={game}
               className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}
@@ -409,7 +418,7 @@ export default function Lobby() {
         {!hostPlayer && selectedGame && (
           <div className="text-muted mt-2 text-center" style={{ fontSize: '0.85rem' }}>
             Host selected: <strong>{getGameName(selectedGame)}</strong>
-            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'hangman' || selectedGame === 'cah' || selectedGame === 'guess-betrayal' || selectedGame === 'meme' || selectedGame === 'familyfeud') && ` · ${roundCount} rounds`}
+            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'wyr' || selectedGame === 'hangman' || selectedGame === 'cah' || selectedGame === 'guess-betrayal' || selectedGame === 'meme' || selectedGame === 'familyfeud' || selectedGame === 'guesswho' || selectedGame === 'uno') && ` · ${roundCount} rounds`}
           </div>
         )}
 
@@ -493,6 +502,30 @@ export default function Lobby() {
             <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[5, 10, 15].map((count) => (
+                <button
+                  key={count}
+                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleRoundCountChange(count)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '0.95rem',
+                    fontWeight: roundCount === count ? 700 : 400,
+                  }}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Round count selector for WYR - host only */}
+        {hostPlayer && selectedGame === 'wyr' && (
+          <div className="mt-3">
+            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[5, 10, 15, 20].map((count) => (
                 <button
                   key={count}
                   className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
@@ -605,6 +638,75 @@ export default function Lobby() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Round count selector for Guess Who - host only */}
+        {hostPlayer && selectedGame === 'guesswho' && (
+          <div className="mt-3">
+            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[3, 5, 8].map((count) => (
+                <button
+                  key={count}
+                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleRoundCountChange(count)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    fontSize: '0.95rem',
+                    fontWeight: roundCount === count ? 700 : 400,
+                  }}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Uno settings - host only */}
+        {hostPlayer && selectedGame === 'uno' && (
+          <>
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Mode</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className={`btn ${gbCategory === 'classic' ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleGbCategoryChange('classic')}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === 'classic' ? 700 : 400 }}
+                >
+                  Classic
+                </button>
+                <button
+                  className={`btn ${gbCategory === 'chaos' ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleGbCategoryChange('chaos')}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === 'chaos' ? 700 : 400 }}
+                >
+                  Chaos
+                </button>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[1, 3, 5].map((count) => (
+                  <button
+                    key={count}
+                    className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                    onClick={() => handleRoundCountChange(count)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.95rem',
+                      fontWeight: roundCount === count ? 700 : 400,
+                    }}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
 

@@ -1,0 +1,574 @@
+/* Guess Who - Game Styles */
+
+.gw-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  height: 100vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+/* Header */
+.gw-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.gw-round-badge {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.gw-timer {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-family: 'Courier New', monospace;
+}
+
+.gw-timer.warning {
+  color: #facc15;
+  animation: pulse 0.6s infinite;
+}
+
+.gw-timer.danger {
+  color: #ef4444;
+  animation: pulse 0.3s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Waiting screen */
+.gw-waiting-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  padding: 32px;
+  text-align: center;
+}
+
+.gw-waiting-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gw-waiting-message {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+/* Prompt cards */
+.gw-prompt-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+
+.gw-prompt-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gw-prompt-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Character board */
+.gw-board-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.gw-character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gw-char-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.gw-char-card:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.gw-char-card.selected {
+  border-color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 16px var(--glow-primary);
+}
+
+.gw-char-card.eliminated {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--border-color);
+}
+
+.gw-char-card.eliminated:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-color);
+}
+
+.gw-char-image {
+  width: 70px;
+  height: 70px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gw-char-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gw-char-image.grayed {
+  filter: grayscale(100%) brightness(0.5);
+}
+
+.gw-char-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.gw-char-checkmark {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 1.2rem;
+  background: var(--accent-primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gw-guess-card {
+  cursor: pointer;
+}
+
+.gw-guess-card:hover {
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 12px var(--glow-secondary);
+}
+
+/* Question section */
+.gw-question-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+}
+
+.gw-question-header {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gw-question-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.gw-question-item {
+  background: var(--bg-primary);
+  border-left: 3px solid var(--accent-primary);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.gw-question-item.gw-question-current {
+  border-left-color: var(--accent-secondary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.gw-question-asker {
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+.gw-question-text {
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.gw-question-answer {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.gw-question-answer.yes {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.gw-question-answer.no {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.gw-question-answer.waiting {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.gw-question-answer-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.gw-question-answer-buttons .btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Question input */
+.gw-question-input-form {
+  display: flex;
+  gap: 6px;
+}
+
+.gw-question-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.gw-question-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.gw-question-input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Submit bar */
+.gw-submit-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Eliminated players */
+.gw-eliminated-players {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.gw-eliminated-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Podium */
+.gw-podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 32px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.gw-podium-position {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.gw-podium-0 {
+  order: 2;
+  flex: 1.1;
+}
+
+.gw-podium-1 {
+  order: 1;
+  flex: 0.9;
+  opacity: 0.9;
+}
+
+.gw-podium-2 {
+  order: 3;
+  flex: 0.9;
+  opacity: 0.9;
+}
+
+.gw-podium-medal {
+  font-size: 2.5rem;
+}
+
+.gw-podium-rank {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gw-podium-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--accent-primary);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}
+
+.gw-podium-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gw-podium-name {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  max-width: 120px;
+}
+
+.gw-podium-score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .gw-character-grid {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 6px;
+  }
+
+  .gw-char-image {
+    width: 60px;
+    height: 60px;
+  }
+
+  .gw-podium {
+    gap: 16px;
+    padding: 24px 12px;
+  }
+
+  .gw-podium-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .gw-podium-medal {
+    font-size: 2rem;
+  }
+
+  .gw-question-section {
+    max-height: 200px;
+  }
+}
+
+/* Utility classes */
+.w-full {
+  width: 100%;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(59, 130, 246, 0.3);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.player-card:hover {
+  border-color: var(--accent-primary);
+}
+
+.player-card.host {
+  border-color: var(--accent-primary);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.score {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
