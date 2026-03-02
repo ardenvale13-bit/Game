@@ -132,6 +132,80 @@ export function useUnoSync({
     } else {
       // --- HOST LISTENERS ---
 
+      // Force end game
+      channel.on('broadcast', { event: 'uno_force_end' }, () => {
+        if (onForceEnd) onForceEnd();
+      });
+
+      // Non-host plays a card → host processes and broadcasts updated state
+      channel.on('broadcast', { event: 'uno_play_card' }, ({ payload }) => {
+        if (!payload) return;
+        const { playerId: pid, cardId, chosenColor } = payload as {
+          playerId: string;
+          cardId: string;
+          chosenColor?: string;
+        };
+        if (store.getState().playCard(pid, cardId, chosenColor as any)) {
+          // Check for round win
+          const state = store.getState();
+          const player = state.players.find(p => p.id === pid);
+          if (player && player.hand.length === 0) {
+            store.getState().endRound(pid);
+            const fullState = store.getState().getFullState();
+            channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+          } else {
+            const fullState = store.getState().getFullState();
+            channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+          }
+        }
+      });
+
+      // Non-host draws a card → host processes and broadcasts
+      channel.on('broadcast', { event: 'uno_draw_card' }, ({ payload }) => {
+        if (!payload) return;
+        const { playerId: pid } = payload as { playerId: string };
+        store.getState().drawCard(pid);
+        store.getState().nextTurn();
+        const fullState = store.getState().getFullState();
+        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+      });
+
+      // Non-host calls UNO
+      channel.on('broadcast', { event: 'uno_call_uno' }, ({ payload }) => {
+        if (!payload) return;
+        const { callerId } = payload as { callerId: string };
+        store.getState().callUno(callerId);
+        const fullState = store.getState().getFullState();
+        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+      });
+
+      // Non-host catches someone not calling UNO
+      channel.on('broadcast', { event: 'uno_catch_uno' }, ({ payload }) => {
+        if (!payload) return;
+        const { catcherId, targetId } = payload as { catcherId: string; targetId: string };
+        store.getState().catchUno(catcherId, targetId);
+        const fullState = store.getState().getFullState();
+        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+      });
+
+      // Non-host jump-in (Chaos mode)
+      channel.on('broadcast', { event: 'uno_jump_in' }, ({ payload }) => {
+        if (!payload) return;
+        const { playerId: pid, cardId } = payload as { playerId: string; cardId: string };
+        store.getState().jumpIn(pid, cardId);
+        const fullState = store.getState().getFullState();
+        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+      });
+
+      // Non-host swap hands (Chaos mode, 7 card)
+      channel.on('broadcast', { event: 'uno_swap_hands' }, ({ payload }) => {
+        if (!payload) return;
+        const { playerId: pid, targetId } = payload as { playerId: string; targetId: string };
+        store.getState().swapHands(pid, targetId);
+        const fullState = store.getState().getFullState();
+        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+      });
+
       // Player requests state (late joiner)
       channel.on('broadcast', { event: 'uno_request_state' }, () => {
         const state = store.getState().getFullState();
@@ -311,8 +385,13 @@ export function useUnoSync({
 
       if (isHost) {
         // Host processes locally
-        const state = store.getState();
-        if (playerId && state.playCard(playerId, cardId, chosenColor as any)) {
+        if (playerId && store.getState().playCard(playerId, cardId, chosenColor as any)) {
+          // Check for round win (player emptied their hand)
+          const afterState = store.getState();
+          const player = afterState.players.find(p => p.id === playerId);
+          if (player && player.hand.length === 0) {
+            store.getState().endRound(playerId);
+          }
           broadcastGameState();
         }
       } else {

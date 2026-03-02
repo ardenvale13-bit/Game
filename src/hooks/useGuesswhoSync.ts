@@ -201,7 +201,7 @@ export function useGuesswhoSync({ roomCode, playerId, isHost, onForceEnd }: UseG
           });
         }
 
-        // In questioning phase - broadcast result to all clients
+        // Broadcast guess result to all clients
         channel.send({
           type: 'broadcast',
           event: 'gw_guess_result',
@@ -211,6 +211,28 @@ export function useGuesswhoSync({ roomCode, playerId, isHost, onForceEnd }: UseG
             isCorrect,
           },
         });
+
+        // If correct, end the round with this guesser as winner
+        if (isCorrect) {
+          setTimeout(() => {
+            store.getState().endRound({ playerId: guesser.id, playerName: guesser.name });
+            const newState = store.getState();
+            const scores: Record<string, number> = {};
+            newState.players.forEach(p => { scores[p.id] = p.score; });
+            const latestResult = newState.roundResults[newState.roundResults.length - 1];
+            if (latestResult) {
+              channel.send({
+                type: 'broadcast',
+                event: 'gw_round_end',
+                payload: {
+                  result: latestResult,
+                  scores,
+                  newPhase: newState.phase,
+                },
+              });
+            }
+          }, 1500);
+        }
       });
 
       // State request (late joiner)
@@ -379,12 +401,52 @@ export function useGuesswhoSync({ roomCode, playerId, isHost, onForceEnd }: UseG
     const guesser = state.players.find(p => p.id === playerId);
     if (!guesser) return;
 
-    channel.send({
-      type: 'broadcast',
-      event: 'gw_player_guess',
-      payload: { guesser, charId },
-    });
-  }, [playerId]);
+    if (isHost) {
+      // Host processes locally (self: false means we won't receive our own broadcast)
+      const isCorrect = store.getState().makeGuess(guesser, charId);
+
+      if (!isCorrect) {
+        channel.send({
+          type: 'broadcast',
+          event: 'gw_player_eliminated',
+          payload: { playerId: guesser.id },
+        });
+      }
+
+      channel.send({
+        type: 'broadcast',
+        event: 'gw_guess_result',
+        payload: { guesser: guesser.name, charId, isCorrect },
+      });
+
+      if (isCorrect) {
+        setTimeout(() => {
+          store.getState().endRound({ playerId: guesser.id, playerName: guesser.name });
+          const newState = store.getState();
+          const scores: Record<string, number> = {};
+          newState.players.forEach(p => { scores[p.id] = p.score; });
+          const latestResult = newState.roundResults[newState.roundResults.length - 1];
+          if (latestResult) {
+            channel.send({
+              type: 'broadcast',
+              event: 'gw_round_end',
+              payload: {
+                result: latestResult,
+                scores,
+                newPhase: newState.phase,
+              },
+            });
+          }
+        }, 1500);
+      }
+    } else {
+      channel.send({
+        type: 'broadcast',
+        event: 'gw_player_guess',
+        payload: { guesser, charId },
+      });
+    }
+  }, [playerId, isHost]);
 
   return {
     isReady,

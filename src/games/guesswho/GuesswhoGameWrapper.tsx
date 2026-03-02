@@ -18,9 +18,10 @@ export default function GuesswhoGameWrapper() {
   const { roomCode } = useParams();
   const lobbyStore = useLobbyStore();
   // Hook for reactive rendering
-  const { phase } = useGuesswhoStore();
+  const { phase, roundResults } = useGuesswhoStore();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const gameStartedRef = useRef(false);
+  const lastRoundCountRef = useRef(0);
 
   const currentPlayerId = lobbyStore.currentPlayerId;
   const hostPlayer = lobbyStore.isHost();
@@ -158,6 +159,29 @@ export default function GuesswhoGameWrapper() {
       }
     }
   }, [broadcastQuestioningPhase, broadcastRoundEnd, broadcastGameOver, startNewRound, lobbyStore]);
+
+  // When a round ends (e.g., correct guess), start next round (host only)
+  useEffect(() => {
+    if (!hostPlayer || roundResults.length === 0) return;
+    // Only trigger on NEW round results (not initial render)
+    if (roundResults.length <= lastRoundCountRef.current) return;
+    lastRoundCountRef.current = roundResults.length;
+
+    const state = gwStore.getState();
+    if (state.phase === 'game-over') {
+      broadcastGameOver();
+      state.players.forEach((p: { id: string; score: number }) => {
+        if (p.score > 0) {
+          lobbyStore.updatePlayerScore(p.id, p.score);
+        }
+      });
+    } else if (state.phase === 'choosing') {
+      // Next round after a short delay
+      setTimeout(() => {
+        startNewRound();
+      }, 2000);
+    }
+  }, [roundResults.length, hostPlayer, broadcastGameOver, startNewRound, lobbyStore]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle character choice (host only, broadcasting to non-choosers)
   const handleChooseCharacter = useCallback((charId: string) => {
