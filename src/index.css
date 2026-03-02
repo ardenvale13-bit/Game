@@ -949,7 +949,7 @@ h3 {
 
 /* ── Lobby layout ─────────────────────────────────────── */
 .lobby-layout {
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 40px 20px;
 }
@@ -1140,6 +1140,18 @@ h3 {
 .game-select-btn .game-players {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .lobby-layout {
+    max-width: 100%;
+    padding: 20px 12px;
+  }
+
+  .game-select-btn .game-icon-img {
+    width: 140px;
+    height: 140px;
+  }
 }
 
 /* Loading spinner */

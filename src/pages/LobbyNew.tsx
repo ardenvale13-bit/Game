@@ -396,7 +396,7 @@ export default function Lobby() {
       {/* Game Selection - visible to all, clickable by host only */}
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
           {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'guesswho', 'uno'] as GameType[]).map((game) => (
             <button
               key={game}
