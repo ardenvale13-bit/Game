@@ -6,8 +6,8 @@ import type { GameType, Player } from '../store/lobbyStore';
 import { CATEGORY_INFO } from '../games/guess-betrayal/questionData';
 import { useRealtimeRoom } from '../hooks/useRealtimeRoom';
 import type { PresencePlayer, BroadcastEvent } from '../hooks/useRealtimeRoom';
-import { deleteRoom } from '../lib/roomService';
-import { clearPlayerSession, getPlayerSession } from '../lib/playerSession';
+import { deleteRoom, updateRoomHost } from '../lib/roomService';
+import { clearPlayerSession, getPlayerSession, savePlayerSession } from '../lib/playerSession';
 
 const PLAYER_NAME_KEY = 'party_player_name';
 
@@ -80,6 +80,9 @@ export default function Lobby() {
     }
   }, [currentPlayerId, players]); // Re-run if players populate after first render
 
+  // Ref for updatePresence so leave callback can use it
+  const updatePresenceRef = useRef<((updates: Partial<PresencePlayer>) => Promise<void>) | null>(null);
+
   // Sync player list from Presence
   const handlePlayersSync = useCallback((presencePlayers: PresencePlayer[]) => {
     const synced: Player[] = presencePlayers.map(p => ({
@@ -92,6 +95,43 @@ export default function Lobby() {
     }));
     setPlayers(synced);
   }, [setPlayers]);
+
+  // Handle a player leaving — if they were host, promote next player
+  const handlePlayerLeave = useCallback((leftPlayer: PresencePlayer) => {
+    if (!leftPlayer.isHost || !roomCode || !currentPlayerId) return;
+
+    // The host left! Check remaining players (from current store, minus the leaver)
+    const remaining = useLobbyStore.getState().players.filter(p => p.id !== leftPlayer.id);
+    if (remaining.length === 0) {
+      // No one left, room will clean itself up
+      return;
+    }
+
+    // Pick the next host — first non-host player (already sorted by joinedAt)
+    const newHost = remaining[0];
+
+    // Am I the new host?
+    if (newHost.id === currentPlayerId) {
+      // Promote myself
+      const updatedPlayers = remaining.map(p =>
+        p.id === currentPlayerId ? { ...p, isHost: true } : p
+      );
+      setPlayers(updatedPlayers);
+
+      // Update session storage
+      const session = getPlayerSession();
+      if (session) {
+        savePlayerSession({ ...session, isHost: true });
+      }
+
+      // Update presence so everyone sees the new host
+      setCurrentPresencePlayer(prev => prev ? { ...prev, isHost: true } : prev);
+      updatePresenceRef.current?.({ isHost: true });
+
+      // Update DB
+      updateRoomHost(roomCode, currentPlayerId);
+    }
+  }, [roomCode, currentPlayerId, setPlayers]);
 
   // Handle broadcast events from other clients
   const handleBroadcast = useCallback((event: BroadcastEvent) => {
@@ -124,8 +164,12 @@ export default function Lobby() {
     roomCode: roomCode || null,
     player: currentPresencePlayer,
     onPlayersSync: handlePlayersSync,
+    onPlayerLeave: handlePlayerLeave,
     onBroadcast: handleBroadcast,
   });
+
+  // Keep updatePresence in a ref so the leave callback can use it
+  useEffect(() => { updatePresenceRef.current = updatePresence; }, [updatePresence]);
 
   // When host selects a game, broadcast to everyone
   const handleSelectGame = (game: GameType) => {
@@ -163,8 +207,8 @@ export default function Lobby() {
   };
 
   const handleLeave = async () => {
-    // If host leaves, clean up the room
-    if (hostPlayer && roomCode) {
+    // Only delete room if host AND last player
+    if (hostPlayer && roomCode && players.length <= 1) {
       await deleteRoom(roomCode);
     }
     clearPlayerSession();

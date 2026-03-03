@@ -138,6 +138,8 @@
   height: 168px;
   border-radius: 6px;
   object-fit: cover;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 50%, #1a1a2e 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
@@ -268,6 +270,8 @@
   height: 28px;
   border-radius: 3px;
   object-fit: cover;
+  background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transform-origin: bottom center;
 }
 

@@ -59,6 +59,20 @@ export async function updateRoom(code: string, updates: Partial<Pick<Room, 'sele
   return true;
 }
 
+export async function updateRoomHost(code: string, newHostPlayerId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('rooms')
+    .update({ host_player_id: newHostPlayerId })
+    .eq('code', code);
+
+  if (error) {
+    console.error('Failed to update room host:', error);
+    return false;
+  }
+
+  return true;
+}
+
 export async function deleteRoom(code: string): Promise<boolean> {
   const { error } = await supabase
     .from('rooms')
