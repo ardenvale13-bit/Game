@@ -83,7 +83,7 @@ export default function Lobby() {
   // Ref for updatePresence so leave callback can use it
   const updatePresenceRef = useRef<((updates: Partial<PresencePlayer>) => Promise<void>) | null>(null);
 
-  // Sync player list from Presence
+  // Sync player list from Presence — also handles host migration
   const handlePlayersSync = useCallback((presencePlayers: PresencePlayer[]) => {
     const synced: Player[] = presencePlayers.map(p => ({
       id: p.id,
@@ -93,45 +93,38 @@ export default function Lobby() {
       isHost: p.isHost,
       score: p.score,
     }));
-    setPlayers(synced);
-  }, [setPlayers]);
 
-  // Handle a player leaving — if they were host, promote next player
-  const handlePlayerLeave = useCallback((leftPlayer: PresencePlayer) => {
-    if (!leftPlayer.isHost || !roomCode || !currentPlayerId) return;
+    // Host migration: if no player has isHost, promote the earliest joiner
+    const hasHost = presencePlayers.some(p => p.isHost);
+    if (!hasHost && presencePlayers.length > 0 && currentPlayerId) {
+      // Sort by joinedAt to pick the earliest joiner deterministically
+      const sorted = [...presencePlayers].sort((a, b) => a.joinedAt - b.joinedAt);
+      const newHostId = sorted[0].id;
 
-    // The host left! Check remaining players (from current store, minus the leaver)
-    const remaining = useLobbyStore.getState().players.filter(p => p.id !== leftPlayer.id);
-    if (remaining.length === 0) {
-      // No one left, room will clean itself up
-      return;
-    }
+      if (newHostId === currentPlayerId) {
+        // I'm the new host — update everything
+        const promoted = synced.map(p =>
+          p.id === currentPlayerId ? { ...p, isHost: true } : p
+        );
+        setPlayers(promoted);
 
-    // Pick the next host — first non-host player (already sorted by joinedAt)
-    const newHost = remaining[0];
+        const session = getPlayerSession();
+        if (session) {
+          savePlayerSession({ ...session, isHost: true });
+        }
 
-    // Am I the new host?
-    if (newHost.id === currentPlayerId) {
-      // Promote myself
-      const updatedPlayers = remaining.map(p =>
-        p.id === currentPlayerId ? { ...p, isHost: true } : p
-      );
-      setPlayers(updatedPlayers);
+        setCurrentPresencePlayer(prev => prev ? { ...prev, isHost: true } : prev);
+        updatePresenceRef.current?.({ isHost: true });
 
-      // Update session storage
-      const session = getPlayerSession();
-      if (session) {
-        savePlayerSession({ ...session, isHost: true });
+        if (roomCode) {
+          updateRoomHost(roomCode, currentPlayerId);
+        }
+        return; // Don't setPlayers again below
       }
-
-      // Update presence so everyone sees the new host
-      setCurrentPresencePlayer(prev => prev ? { ...prev, isHost: true } : prev);
-      updatePresenceRef.current?.({ isHost: true });
-
-      // Update DB
-      updateRoomHost(roomCode, currentPlayerId);
     }
-  }, [roomCode, currentPlayerId, setPlayers]);
+
+    setPlayers(synced);
+  }, [setPlayers, currentPlayerId, roomCode]);
 
   // Handle broadcast events from other clients
   const handleBroadcast = useCallback((event: BroadcastEvent) => {
@@ -164,11 +157,10 @@ export default function Lobby() {
     roomCode: roomCode || null,
     player: currentPresencePlayer,
     onPlayersSync: handlePlayersSync,
-    onPlayerLeave: handlePlayerLeave,
     onBroadcast: handleBroadcast,
   });
 
-  // Keep updatePresence in a ref so the leave callback can use it
+  // Keep updatePresence in a ref so the sync callback can use it
   useEffect(() => { updatePresenceRef.current = updatePresence; }, [updatePresence]);
 
   // When host selects a game, broadcast to everyone
