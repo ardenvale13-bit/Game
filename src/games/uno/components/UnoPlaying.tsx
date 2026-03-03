@@ -157,7 +157,7 @@ export default function UnoPlaying({
 
       {/* Table surface */}
       <div className="uno-table-container">
-        <img src="/uno/uno-table.png" alt="" className="uno-table-img" draggable={false} />
+        <img src="/Uno/uno-table.png" alt="" className="uno-table-img" draggable={false} />
 
         {/* Other players around the table */}
         {otherPlayers.map((p, idx) => {

@@ -40,15 +40,15 @@ const COLOR_TO_FOLDER: Record<UnoColor, string> = {
 /** Get the image path for a card */
 export function getCardImagePath(card: UnoCard): string {
   if (card.value === 'wild') {
-    return '/uno/change-color.png';
+    return '/Uno/change-color.png';
   }
   if (card.value === 'wild4') {
-    return '/uno/plus-four.png';
+    return '/Uno/plus-four.png';
   }
   if (!card.color) return '';
   const folder = COLOR_TO_FOLDER[card.color];
   const word = VALUE_TO_WORD[card.value] || card.value;
-  return `/uno/${folder}/${card.color}-${word}.png`;
+  return `/Uno/${folder}/${card.color}-${word}.png`;
 }
 
 export function generateUnoDeck(): UnoCard[] {
