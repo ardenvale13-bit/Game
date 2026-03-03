@@ -1,8 +1,8 @@
-// Uno - Main Game Playing Area
+// Uno - Main Game Playing Area (Table Layout with Custom Card Images)
 import { useState, useMemo } from 'react';
 import useUnoStore from '../unoStore';
 import type { UnoColor } from '../unoData';
-import { getCardDisplayValue, cardEquals } from '../unoData';
+import { getCardImagePath, cardEquals } from '../unoData';
 
 interface UnoPlayingProps {
   currentPlayerId: string;
@@ -12,6 +12,21 @@ interface UnoPlayingProps {
   onCatchUno: (targetId: string) => void;
   onJumpIn: (cardId: string) => void;
   onSwapHands: (targetId: string) => void;
+}
+
+// Position players around the table based on count
+function getPlayerPositions(count: number): { className: string }[] {
+  // Positions exclude the current player (always at bottom)
+  // For N other players, distribute around top/sides
+  if (count === 1) return [{ className: 'pos-top' }];
+  if (count === 2) return [{ className: 'pos-left' }, { className: 'pos-right' }];
+  if (count === 3) return [{ className: 'pos-left' }, { className: 'pos-top' }, { className: 'pos-right' }];
+  if (count === 4) return [{ className: 'pos-top-left' }, { className: 'pos-top' }, { className: 'pos-top-right' }, { className: 'pos-right' }];
+  // 5+: spread evenly
+  return Array.from({ length: count }, (_, i) => {
+    const positions = ['pos-left', 'pos-top-left', 'pos-top', 'pos-top-right', 'pos-right'];
+    return { className: positions[i % positions.length] };
+  });
 }
 
 export default function UnoPlaying({
@@ -55,6 +70,10 @@ export default function UnoPlaying({
     return player.hand.filter((c) => cardEquals(c, topCard));
   }, [player, topCard, mode]);
 
+  // Other players (everyone except current)
+  const otherPlayers = players.filter((p) => p.id !== currentPlayerId);
+  const positions = getPlayerPositions(otherPlayers.length);
+
   const handlePlayCard = (cardId: string) => {
     if (phase !== 'playing') return;
     if (currentPlayerId !== currentPlayer?.id) return;
@@ -62,14 +81,12 @@ export default function UnoPlaying({
     const card = player?.hand.find((c) => c.id === cardId);
     if (!card) return;
 
-    // Check if it's a wild card that needs color selection
     if (card.value === 'wild' || card.value === 'wild4') {
       setPendingCardId(cardId);
       setColorPickerOpen(true);
       return;
     }
 
-    // Check if it's a 7 card in chaos mode (needs swap target)
     if (card.value === '7' && mode === 'chaos') {
       setSwapMode(true);
       setPendingCardId(cardId);
@@ -89,9 +106,7 @@ export default function UnoPlaying({
 
   const handleSwapChosen = (targetId: string) => {
     if (pendingCardId) {
-      // First play the card
       onPlayCard(pendingCardId);
-      // Then swap hands
       onSwapHands(targetId);
       setPendingCardId(null);
     }
@@ -111,127 +126,112 @@ export default function UnoPlaying({
   const isMyTurn = currentPlayerId === currentPlayer?.id;
   const canPlay = isMyTurn && playableCards.length > 0;
 
-  return (
-    <div className="uno-playing-area">
-      {/* Top Area - Other Players */}
-      <div className="uno-players-top">
-        {players.map((p, idx) => {
-          if (p.id === currentPlayerId) return null;
+  // Color indicator hex values
+  const colorHex: Record<string, string> = {
+    pink: '#e91e9c',
+    blue: '#2196f3',
+    green: '#4caf50',
+    purple: '#9c27b0',
+  };
 
-          const isCurrentTurn = idx === currentTurnIndex;
+  return (
+    <div className="uno-table-scene">
+      {/* Status bar overlay */}
+      <div className="uno-status-overlay">
+        <div className={`uno-timer-badge ${timeRemaining < 10 ? 'warning' : ''}`}>
+          {timeRemaining}s
+        </div>
+        <div className="uno-turn-badge">
+          {isMyTurn ? 'Your turn!' : `${currentPlayer?.name}'s turn`}
+        </div>
+        <div className="uno-direction-badge">
+          {direction === 1 ? '⟳' : '⟲'}
+        </div>
+        {currentColor && (
+          <div
+            className="uno-color-indicator"
+            style={{ background: colorHex[currentColor] || '#888' }}
+          />
+        )}
+      </div>
+
+      {/* Table surface */}
+      <div className="uno-table-container">
+        <img src="/uno/uno-table.png" alt="" className="uno-table-img" draggable={false} />
+
+        {/* Other players around the table */}
+        {otherPlayers.map((p, idx) => {
+          const pos = positions[idx];
+          const isCurrentTurn = players.indexOf(p) === currentTurnIndex;
 
           return (
             <div
               key={p.id}
-              className={`uno-player-card ${isCurrentTurn ? 'current-turn' : ''}`}
+              className={`uno-table-player ${pos.className} ${isCurrentTurn ? 'active-turn' : ''}`}
             >
-              <img
-                src={`/avatars/${p.avatarFilename}`}
-                alt={p.name}
-                className="uno-player-avatar"
-              />
-              <div className="uno-player-info">{p.name}</div>
-              <div className="uno-player-hand-count">
-                {p.hand.length} {p.hand.length === 1 ? 'card' : 'cards'}
+              <div className="uno-tp-avatar-wrap">
+                <img
+                  src={`/avatars/${p.avatarFilename}`}
+                  alt={p.name}
+                  className="uno-tp-avatar"
+                />
+                {isCurrentTurn && <div className="uno-tp-turn-ring" />}
+              </div>
+              <div className="uno-tp-name">{p.name}</div>
+              <div className="uno-tp-count">{p.hand.length}</div>
+              {/* Show face-down cards fanned */}
+              <div className="uno-tp-cards">
+                {p.hand.slice(0, Math.min(p.hand.length, 7)).map((_, ci) => (
+                  <div
+                    key={ci}
+                    className="uno-tp-card-back"
+                    style={{
+                      transform: `rotate(${(ci - Math.min(p.hand.length, 7) / 2) * 8}deg)`,
+                      zIndex: ci,
+                    }}
+                  />
+                ))}
               </div>
             </div>
           );
         })}
-      </div>
 
-      {/* Middle Area - Discard & Draw Piles */}
-      <div className="uno-center-area">
-        {/* Discard Pile */}
-        <div className="uno-pile">
-          <div className="uno-pile-label">Discard</div>
-          {topCard && (
-            <div className="uno-discard-pile">
-              <div
-                className={`uno-card ${topCard.color || 'wild'}`}
-                style={{
-                  background:
-                    topCard.color === null
-                      ? 'linear-gradient(135deg, #ff0000 0%, #ffff00 25%, #00ff00 50%, #0000ff 75%, #ff0000 100%)'
-                      : undefined,
-                }}
-              >
-                <div className="uno-card-top">
-                  {getCardDisplayValue(topCard.value)}
-                </div>
-                <div className="uno-card-center">
-                  {topCard.value === 'skip'
-                    ? '⏭'
-                    : topCard.value === 'reverse'
-                    ? '↩'
-                    : topCard.value === 'draw2'
-                    ? '+2'
-                    : topCard.value === 'wild'
-                    ? 'W'
-                    : topCard.value === 'wild4'
-                    ? 'W4'
-                    : topCard.value}
-                </div>
-                <div className="uno-card-bottom">
-                  {getCardDisplayValue(topCard.value)}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Center: Discard + Draw piles */}
+        <div className="uno-table-center">
+          {/* Discard Pile */}
+          <div className="uno-center-pile discard">
+            {topCard && (
+              <img
+                src={getCardImagePath(topCard)}
+                alt="discard"
+                className="uno-center-card"
+                style={{ transform: 'rotate(-5deg)' }}
+                draggable={false}
+              />
+            )}
+          </div>
 
-        {/* Draw Pile */}
-        <div className="uno-pile">
-          <div className="uno-pile-label">Draw</div>
+          {/* Draw Pile */}
           <div
-            className="uno-draw-pile"
+            className={`uno-center-pile draw ${isMyTurn && !canPlay ? 'clickable' : ''}`}
             onClick={() => {
               if (isMyTurn && !canPlay) {
                 onDrawCard();
               }
             }}
-            style={{
-              cursor: isMyTurn && !canPlay ? 'pointer' : 'default',
-              opacity: isMyTurn && !canPlay ? 1 : 0.7,
-            }}
           >
-            <div className="uno-card card-back">
-              <div className="uno-card-top">?</div>
-              <div className="uno-card-center">⬚</div>
-              <div className="uno-card-bottom">?</div>
+            <div className="uno-draw-stack">
+              <div className="uno-card-back-img" />
+              {drawPile.length > 1 && <div className="uno-card-back-img shadow" />}
             </div>
-            {drawPile.length > 1 && <div className="uno-draw-pile-back" />}
+            <div className="uno-draw-count">{drawPile.length}</div>
           </div>
-          <div className="uno-pile-count">{drawPile.length} cards</div>
         </div>
       </div>
 
-      {/* Status & Timer */}
-      <div className="uno-status-bar">
-        <div className="uno-status-item">
-          <span className={`uno-timer ${timeRemaining < 10 ? 'warning' : ''}`}>
-            {timeRemaining}s
-          </span>
-        </div>
-        <div className="uno-status-item">
-          <span>{currentPlayer?.name}'s turn</span>
-        </div>
-        <div className="uno-status-item">
-          <div className={`uno-direction ${direction === -1 ? 'counter' : ''}`}>
-            {direction === 1 ? '→' : '←'}
-          </div>
-        </div>
-        {currentColor && (
-          <div className="uno-status-item">
-            <span>Color:</span>
-            <div className={`uno-current-color ${currentColor}`} />
-          </div>
-        )}
-      </div>
-
-      {/* My Hand */}
-      <div className="uno-hand-area">
-        <div className="uno-hand-label">Your Hand ({player?.hand.length || 0})</div>
-        <div className="uno-hand-container">
+      {/* My Hand (bottom) */}
+      <div className="uno-my-hand-area">
+        <div className="uno-hand-scroll">
           {player?.hand.map((card) => {
             const isPlayable = playableCards.some((c) => c.id === card.id);
             const isJumpIn = jumpInCards.some((c) => c.id === card.id);
@@ -239,9 +239,9 @@ export default function UnoPlaying({
             return (
               <div
                 key={card.id}
-                className={`uno-card-in-hand uno-card ${card.color || 'wild'} ${
-                  !isPlayable ? 'not-playable' : 'playable'
-                } ${isJumpIn && !isMyTurn ? 'jump-in' : ''}`}
+                className={`uno-my-card ${isPlayable ? 'playable' : 'not-playable'} ${
+                  isJumpIn && !isMyTurn ? 'jump-in' : ''
+                }`}
                 onClick={() => {
                   if (isJumpIn && mode === 'chaos' && !isMyTurn) {
                     handleJumpIn(card.id);
@@ -249,89 +249,57 @@ export default function UnoPlaying({
                     handlePlayCard(card.id);
                   }
                 }}
-                style={{
-                  background:
-                    card.color === null
-                      ? 'linear-gradient(135deg, #ff0000 0%, #ffff00 25%, #00ff00 50%, #0000ff 75%, #ff0000 100%)'
-                      : undefined,
-                  cursor: isPlayable && isMyTurn ? 'pointer' : 'default',
-                }}
               >
-                <div className="uno-card-top">
-                  {getCardDisplayValue(card.value)}
-                </div>
-                <div className="uno-card-center">
-                  {card.value === 'skip'
-                    ? '⏭'
-                    : card.value === 'reverse'
-                    ? '↩'
-                    : card.value === 'draw2'
-                    ? '+2'
-                    : card.value === 'wild'
-                    ? 'W'
-                    : card.value === 'wild4'
-                    ? 'W4'
-                    : card.value === '0'
-                    ? '↻'
-                    : card.value === '7'
-                    ? '⇄'
-                    : card.value}
-                </div>
-                <div className="uno-card-bottom">
-                  {getCardDisplayValue(card.value)}
-                </div>
+                <img
+                  src={getCardImagePath(card)}
+                  alt={`${card.color || 'wild'} ${card.value}`}
+                  className="uno-my-card-img"
+                  draggable={false}
+                />
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="uno-action-buttons">
-        {isMyTurn && player && player.hand.length === 1 && !player.calledUno && (
-          <button className="uno-uno-btn" onClick={onCallUno}>
-            UNO!
-          </button>
-        )}
-
-        {!isMyTurn && unoVulnerable && unoVulnerable !== currentPlayerId && (
-          <button
-            className="uno-catch-btn pulse"
-            onClick={handleCatchUno}
-          >
-            Catch UNO!
-          </button>
-        )}
+        {/* Action Buttons */}
+        <div className="uno-action-row">
+          {isMyTurn && player && player.hand.length === 1 && !player.calledUno && (
+            <button className="uno-uno-btn" onClick={onCallUno}>
+              UNO!
+            </button>
+          )}
+          {!isMyTurn && unoVulnerable && unoVulnerable !== currentPlayerId && (
+            <button className="uno-catch-btn pulse" onClick={handleCatchUno}>
+              Catch!
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Color Picker Modal */}
       {colorPickerOpen && (
-        <div className="uno-color-picker-overlay" onClick={() => setColorPickerOpen(false)}>
-          <div className="uno-color-picker" onClick={(e) => e.stopPropagation()}>
-            <div className="uno-color-picker-title">Choose a Color</div>
-            <div className="uno-color-buttons">
-              {(['red', 'blue', 'green', 'yellow'] as UnoColor[]).map((color) => (
+        <div className="uno-modal-overlay" onClick={() => setColorPickerOpen(false)}>
+          <div className="uno-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="uno-modal-title">Choose a Color</div>
+            <div className="uno-color-grid">
+              {(['pink', 'blue', 'green', 'purple'] as UnoColor[]).map((color) => (
                 <button
                   key={color}
-                  className={`uno-color-btn ${color}`}
+                  className="uno-color-pick"
+                  style={{ background: colorHex[color] }}
                   onClick={() => handleColorChosen(color)}
-                >
-                  {color === 'red' ? '●' : color === 'blue' ? '●' : color === 'green' ? '●' : '●'}
-                </button>
+                />
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Swap Target Modal (7 Card in Chaos) */}
+      {/* Swap Target Modal */}
       {swapMode && (
-        <div
-          className="uno-color-picker-overlay"
-          onClick={() => setSwapMode(false)}
-        >
-          <div className="uno-color-picker" onClick={(e) => e.stopPropagation()}>
-            <div className="uno-color-picker-title">Swap hands with:</div>
+        <div className="uno-modal-overlay" onClick={() => setSwapMode(false)}>
+          <div className="uno-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="uno-modal-title">Swap hands with:</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {players
                 .filter((p) => p.id !== currentPlayerId)

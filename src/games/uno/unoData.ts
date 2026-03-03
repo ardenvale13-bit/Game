@@ -1,5 +1,5 @@
 // Uno Game Data & Deck Generation
-export type UnoColor = 'red' | 'blue' | 'green' | 'yellow';
+export type UnoColor = 'pink' | 'blue' | 'green' | 'purple';
 export type UnoValue = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'skip' | 'reverse' | 'draw2';
 export type UnoSpecial = 'wild' | 'wild4';
 
@@ -10,7 +10,46 @@ export interface UnoCard {
   points: number;
 }
 
-const COLORS: UnoColor[] = ['red', 'blue', 'green', 'yellow'];
+const COLORS: UnoColor[] = ['pink', 'blue', 'green', 'purple'];
+
+// Map card value to filename word
+const VALUE_TO_WORD: Record<string, string> = {
+  '0': 'zero',
+  '1': 'one',
+  '2': 'two',
+  '3': 'three',
+  '4': 'four',
+  '5': 'five',
+  '6': 'six',
+  '7': 'seven',
+  '8': 'eight',
+  '9': 'nine',
+  skip: 'skip',
+  reverse: 'reverse',
+  draw2: 'plus2',
+};
+
+// Map color to folder name
+const COLOR_TO_FOLDER: Record<UnoColor, string> = {
+  pink: 'Pink',
+  blue: 'Blue',
+  green: 'Green',
+  purple: 'Purple',
+};
+
+/** Get the image path for a card */
+export function getCardImagePath(card: UnoCard): string {
+  if (card.value === 'wild') {
+    return '/uno/change-color.png';
+  }
+  if (card.value === 'wild4') {
+    return '/uno/plus four.png';
+  }
+  if (!card.color) return '';
+  const folder = COLOR_TO_FOLDER[card.color];
+  const word = VALUE_TO_WORD[card.value] || card.value;
+  return `/uno/${folder}/${card.color}-${word}.png`;
+}
 
 export function generateUnoDeck(): UnoCard[] {
   const cards: UnoCard[] = [];
