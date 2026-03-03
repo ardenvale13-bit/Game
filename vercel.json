@@ -1,5 +1,8 @@
 {
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/((?!assets|avatars|cah|.*\\.png|.*\\.svg|.*\\.ico).*)", "destination": "/index.html" }
+    { "source": "/((?!assets|avatars|uno|cah|.*\\.png|.*\\.svg|.*\\.ico).*)", "destination": "/index.html" }
   ]
 }
