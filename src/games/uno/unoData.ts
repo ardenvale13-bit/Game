@@ -160,16 +160,18 @@ export function canPlayCard(
     return true;
   }
 
-  // If there's an active color (set by a wild), match that
-  if (currentColor) {
-    return card.color === currentColor;
-  }
-
-  // Otherwise, match color or value with top card
-  if (card.color === topCard.color) {
+  // Match by value (e.g. pink 6 on blue 6) — always allowed
+  if (card.value === topCard.value) {
     return true;
   }
-  if (card.value === topCard.value) {
+
+  // Match by active color (covers both wild-chosen color and normal card color)
+  if (currentColor && card.color === currentColor) {
+    return true;
+  }
+
+  // Fallback: match top card color directly (if currentColor somehow null)
+  if (card.color === topCard.color) {
     return true;
   }
 
