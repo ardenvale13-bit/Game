@@ -376,28 +376,41 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
       return null;
     }
 
+    let drawnCard: UnoCard | null = null;
+
     set((s) => {
+      let newDrawPile = [...s.drawPile];
+      let newDiscardPile = [...s.discardPile];
+
       // Reshuffle if needed
-      if (s.drawPile.length === 0 && s.discardPile.length > 1) {
-        const topCard = s.discardPile[s.discardPile.length - 1];
-        const reshuffled = s.discardPile.slice(0, -1);
+      if (newDrawPile.length === 0 && newDiscardPile.length > 1) {
+        const topCard = newDiscardPile[newDiscardPile.length - 1];
+        const reshuffled = newDiscardPile.slice(0, -1);
         for (let i = reshuffled.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [reshuffled[i], reshuffled[j]] = [reshuffled[j], reshuffled[i]];
         }
-        s.drawPile = reshuffled;
-        s.discardPile = [topCard];
+        newDrawPile = reshuffled;
+        newDiscardPile = [topCard];
       }
 
-      if (s.drawPile.length > 0) {
-        const drawn = s.drawPile.shift()!;
-        s.players[playerIdx].hand.push(drawn);
+      if (newDrawPile.length > 0) {
+        drawnCard = newDrawPile.shift()!;
+        const newPlayers = s.players.map((p, idx) =>
+          idx === playerIdx
+            ? { ...p, hand: [...p.hand, drawnCard!] }
+            : p
+        );
+        return {
+          drawPile: newDrawPile,
+          discardPile: newDiscardPile,
+          players: newPlayers,
+        };
       }
 
-      return s;
+      return { drawPile: newDrawPile, discardPile: newDiscardPile };
     });
 
-    const drawnCard = state.drawPile[0] || null;
     return drawnCard;
   },
 

@@ -410,9 +410,9 @@ export function useUnoSync({
     if (!channel) return;
 
     if (isHost) {
-      const state = store.getState();
       if (playerId) {
-        state.drawCard(playerId);
+        store.getState().drawCard(playerId);
+        store.getState().nextTurn();
         broadcastGameState();
       }
     } else {
