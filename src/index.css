@@ -1142,10 +1142,20 @@ h3 {
   color: var(--text-muted);
 }
 
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
 @media (max-width: 600px) {
   .lobby-layout {
     max-width: 100%;
     padding: 20px 12px;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .game-select-btn .game-icon-img {

@@ -88,7 +88,7 @@
 }
 
 .uno-table-img {
-  width: min(55vw, 450px);
+  width: min(80vw, 900px);
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
@@ -117,7 +117,7 @@
 }
 
 .uno-center-card {
-  width: 80px;
+  width: 120px;
   height: auto;
   border-radius: 6px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
@@ -126,19 +126,18 @@
 
 .uno-draw-stack {
   position: relative;
-  width: 80px;
-  height: 112px;
+  width: 120px;
+  height: 168px;
 }
 
 .uno-card-back-img {
   position: absolute;
   top: 0;
   left: 0;
-  width: 80px;
-  height: 112px;
+  width: 120px;
+  height: 168px;
   border-radius: 6px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 50%, #1a1a2e 100%);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  object-fit: cover;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
@@ -268,8 +267,7 @@
   width: 20px;
   height: 28px;
   border-radius: 3px;
-  background: linear-gradient(135deg, #1a1a2e, #2d2d44);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  object-fit: cover;
   transform-origin: bottom center;
 }
 
@@ -325,7 +323,7 @@
 }
 
 .uno-my-card-img {
-  width: 72px;
+  width: 108px;
   height: auto;
   border-radius: 5px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
@@ -703,21 +701,21 @@
 /* ── RESPONSIVE ───────────────────────────────────── */
 @media (max-width: 768px) {
   .uno-table-img {
-    width: min(70vw, 320px);
+    width: min(85vw, 600px);
   }
 
   .uno-center-card {
-    width: 60px;
+    width: 90px;
   }
 
   .uno-draw-stack,
   .uno-card-back-img {
-    width: 60px;
-    height: 84px;
+    width: 90px;
+    height: 126px;
   }
 
   .uno-my-card-img {
-    width: 58px;
+    width: 80px;
   }
 
   .uno-my-card {
@@ -766,21 +764,21 @@
 
 @media (max-height: 600px) {
   .uno-my-card-img {
-    width: 52px;
+    width: 72px;
   }
 
   .uno-table-img {
-    width: min(40vw, 280px);
+    width: min(60vw, 500px);
   }
 
   .uno-center-card {
-    width: 50px;
+    width: 80px;
   }
 
   .uno-draw-stack,
   .uno-card-back-img {
-    width: 50px;
-    height: 70px;
+    width: 80px;
+    height: 112px;
   }
 
   .uno-my-hand-area {

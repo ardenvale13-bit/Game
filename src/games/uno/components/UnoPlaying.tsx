@@ -182,9 +182,12 @@ export default function UnoPlaying({
               {/* Show face-down cards fanned */}
               <div className="uno-tp-cards">
                 {p.hand.slice(0, Math.min(p.hand.length, 7)).map((_, ci) => (
-                  <div
+                  <img
                     key={ci}
+                    src="/Uno/uno-cardback.png"
+                    alt=""
                     className="uno-tp-card-back"
+                    draggable={false}
                     style={{
                       transform: `rotate(${(ci - Math.min(p.hand.length, 7) / 2) * 8}deg)`,
                       zIndex: ci,
@@ -221,8 +224,8 @@ export default function UnoPlaying({
             }}
           >
             <div className="uno-draw-stack">
-              <div className="uno-card-back-img" />
-              {drawPile.length > 1 && <div className="uno-card-back-img shadow" />}
+              <img src="/Uno/uno-cardback.png" alt="" className="uno-card-back-img" draggable={false} />
+              {drawPile.length > 1 && <img src="/Uno/uno-cardback.png" alt="" className="uno-card-back-img shadow" draggable={false} />}
             </div>
             <div className="uno-draw-count">{drawPile.length}</div>
           </div>
