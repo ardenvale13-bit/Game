@@ -89,8 +89,9 @@
 }
 
 .uno-table-img {
-  width: min(80vw, 900px);
-  max-height: 100%;
+  width: auto;
+  height: 100%;
+  max-width: min(80vw, 900px);
   aspect-ratio: 1;
   object-fit: contain;
   pointer-events: none;
