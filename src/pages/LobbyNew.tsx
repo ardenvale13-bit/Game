@@ -249,7 +249,6 @@ export default function Lobby() {
     if (game === 'wmlt') return 3;
     if (game === 'wyr') return 2;
     if (game === 'hangman') return 2;
-    if (game === 'guesswho') return 3;
     if (game === 'uno') return 2;
 
     if (game === 'guess-betrayal') return 4;
@@ -266,7 +265,6 @@ export default function Lobby() {
       case 'wmlt': return "Who's Most Likely To";
       case 'wyr': return 'Would You Rather';
       case 'hangman': return 'Hangman';
-      case 'guesswho': return 'Guess Who?';
       case 'uno': return 'Uno';
 
       case 'guess-betrayal': return 'Guess Betrayal';
@@ -284,7 +282,6 @@ export default function Lobby() {
       case 'wmlt': return '/wmlt-icon.png';
       case 'wyr': return '/wyr-icon.png';
       case 'hangman': return '/hangman-icon.png';
-      case 'guesswho': return '/guesswho-icon.png';
       case 'uno': return '/uno-icon.png';
 
       case 'guess-betrayal': return '/guess-betrayal-icon.png';
@@ -433,7 +430,7 @@ export default function Lobby() {
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
         <div className="game-grid">
-          {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'guesswho', 'uno'] as GameType[]).map((game) => (
+          {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'uno'] as GameType[]).map((game) => (
             <button
               key={game}
               className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}
@@ -454,7 +451,7 @@ export default function Lobby() {
         {!hostPlayer && selectedGame && (
           <div className="text-muted mt-2 text-center" style={{ fontSize: '0.85rem' }}>
             Host selected: <strong>{getGameName(selectedGame)}</strong>
-            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'wyr' || selectedGame === 'hangman' || selectedGame === 'cah' || selectedGame === 'guess-betrayal' || selectedGame === 'meme' || selectedGame === 'familyfeud' || selectedGame === 'guesswho' || selectedGame === 'uno') && ` · ${roundCount} rounds`}
+            {(selectedGame === 'pictionary' || selectedGame === 'wmlt' || selectedGame === 'wyr' || selectedGame === 'hangman' || selectedGame === 'cah' || selectedGame === 'guess-betrayal' || selectedGame === 'meme' || selectedGame === 'familyfeud' || selectedGame === 'uno') && ` · ${roundCount} rounds`}
           </div>
         )}
 
@@ -658,30 +655,6 @@ export default function Lobby() {
             <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[3, 5, 10].map((count) => (
-                <button
-                  key={count}
-                  className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                  onClick={() => handleRoundCountChange(count)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    fontSize: '0.95rem',
-                    fontWeight: roundCount === count ? 700 : 400,
-                  }}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Round count selector for Guess Who - host only */}
-        {hostPlayer && selectedGame === 'guesswho' && (
-          <div className="mt-3">
-            <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Rounds</div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[3, 5, 8].map((count) => (
                 <button
                   key={count}
                   className={`btn ${roundCount === count ? 'btn-primary' : 'btn-secondary'} btn-small`}

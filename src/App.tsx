@@ -8,8 +8,6 @@ import './index.css';
 import './games/cah/cah.css';
 import './games/hangman/hangman.css';
 import './games/wyr/wyr.css';
-import './games/guesswho/guesswho.css';
-
 import './games/guess-betrayal/guess-betrayal.css';
 import './games/uno/uno.css';
 
