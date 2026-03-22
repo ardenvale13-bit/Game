@@ -63,7 +63,7 @@ export default function UnoPlaying({
   const playableCards = useMemo(() => {
     if (!player) return [];
     return useUnoStore.getState().getPlayableCards(currentPlayerId);
-  }, [player, currentPlayerId]);
+  }, [player, currentPlayerId, currentColor, topCard]);
 
   const jumpInCards = useMemo(() => {
     if (!player || !topCard || mode !== 'chaos') return [];
@@ -216,9 +216,9 @@ export default function UnoPlaying({
 
           {/* Draw Pile */}
           <div
-            className={`uno-center-pile draw ${isMyTurn && !canPlay ? 'clickable' : ''}`}
+            className={`uno-center-pile draw ${isMyTurn ? 'clickable' : ''}`}
             onClick={() => {
-              if (isMyTurn && !canPlay) {
+              if (isMyTurn) {
                 onDrawCard();
               }
             }}
@@ -266,12 +266,12 @@ export default function UnoPlaying({
 
         {/* Action Buttons */}
         <div className="uno-action-row">
-          {isMyTurn && player && player.hand.length === 1 && !player.calledUno && (
+          {player && player.hand.length === 1 && !player.calledUno && (
             <button className="uno-uno-btn" onClick={onCallUno}>
               UNO!
             </button>
           )}
-          {!isMyTurn && unoVulnerable && unoVulnerable !== currentPlayerId && (
+          {unoVulnerable && unoVulnerable !== currentPlayerId && (
             <button className="uno-catch-btn pulse" onClick={handleCatchUno}>
               Catch!
             </button>
