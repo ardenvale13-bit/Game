@@ -14,6 +14,10 @@ import GuessBetrayalGameWrapper from '../games/guess-betrayal/GuessBetrayalGameW
 import MakeItMemeGameWrapper from '../games/meme/MakeItMemeGameWrapper';
 import FamilyFeudGameWrapper from '../games/family-feud/FamilyFeudGameWrapper';
 import UnoGameWrapper from '../games/uno/UnoGameWrapper';
+import TicTacToeMultiplayer from '../games/tictactoe/TicTacToeMultiplayer';
+import Connect4Multiplayer from '../games/connect4/Connect4Multiplayer';
+import CheckersMultiplayer from '../games/checkers/CheckersMultiplayer';
+import ChessMultiplayer from '../games/chess/ChessMultiplayer';
 
 export default function GameRouter() {
   const { game, roomCode } = useParams();
@@ -47,6 +51,15 @@ export default function GameRouter() {
       return <FamilyFeudGameWrapper />;
     case 'uno':
       return <UnoGameWrapper />;
+
+    case 'tictactoe':
+      return <TicTacToeMultiplayer />;
+    case 'connect4':
+      return <Connect4Multiplayer />;
+    case 'checkers':
+      return <CheckersMultiplayer />;
+    case 'chess':
+      return <ChessMultiplayer />;
     default:
       return <Navigate to={`/lobby/${roomCode}`} replace />;
   }

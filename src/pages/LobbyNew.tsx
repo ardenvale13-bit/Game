@@ -250,6 +250,10 @@ export default function Lobby() {
     if (game === 'wyr') return 2;
     if (game === 'hangman') return 2;
     if (game === 'uno') return 2;
+    if (game === 'tictactoe') return 2;
+    if (game === 'connect4') return 2;
+    if (game === 'checkers') return 2;
+    if (game === 'chess') return 2;
 
     if (game === 'guess-betrayal') return 4;
     if (game === 'meme') return 3;
@@ -266,6 +270,10 @@ export default function Lobby() {
       case 'wyr': return 'Would You Rather';
       case 'hangman': return 'Hangman';
       case 'uno': return 'Uno';
+      case 'tictactoe': return 'Noughts & Crosses';
+      case 'connect4': return 'Connect Four';
+      case 'checkers': return 'Checkers';
+      case 'chess': return 'Chess';
 
       case 'guess-betrayal': return 'Guess Betrayal';
       case 'meme': return 'Make It Meme';
@@ -283,6 +291,10 @@ export default function Lobby() {
       case 'wyr': return '/wyr-icon.png';
       case 'hangman': return '/hangman-icon.png';
       case 'uno': return '/uno-icon.png';
+      case 'tictactoe': return '/tictactoe-icon.png';
+      case 'connect4': return '/connect4-icon.png';
+      case 'checkers': return '/checkers-icon.png';
+      case 'chess': return '/chess-icon.png';
 
       case 'guess-betrayal': return '/guess-betrayal-icon.png';
       case 'meme': return '/meme-icon.png';
@@ -430,7 +442,7 @@ export default function Lobby() {
       <div className="card mb-3">
         <h3 className="mb-2">{hostPlayer ? 'Choose Game' : 'Games'}</h3>
         <div className="game-grid">
-          {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'uno'] as GameType[]).map((game) => (
+          {(['pictionary', 'cah', 'codenames', 'wmlt', 'wyr', 'hangman', 'guess-betrayal', 'meme', 'familyfeud', 'uno', 'tictactoe', 'connect4', 'checkers', 'chess'] as GameType[]).map((game) => (
             <button
               key={game}
               className={`game-select-btn ${selectedGame === game ? 'selected' : ''}`}

@@ -10,7 +10,7 @@ export interface Player {
   score: number; // Persists across games in same session
 }
 
-export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'wyr' | 'hangman' | 'guess-betrayal' | 'meme' | 'familyfeud' | 'uno' | null;
+export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'wyr' | 'hangman' | 'guess-betrayal' | 'meme' | 'familyfeud' | 'uno' | 'tictactoe' | 'connect4' | 'checkers' | 'chess' | null;
 
 interface LobbyState {
   // Room
@@ -138,6 +138,10 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
     if (state.selectedGame === 'wmlt') return state.players.length >= 3;
     if (state.selectedGame === 'hangman') return state.players.length >= 2;
     if (state.selectedGame === 'uno') return state.players.length >= 2;
+    if (state.selectedGame === 'tictactoe') return state.players.length === 2;
+    if (state.selectedGame === 'connect4') return state.players.length === 2;
+    if (state.selectedGame === 'checkers') return state.players.length === 2;
+    if (state.selectedGame === 'chess') return state.players.length === 2;
 
     if (state.selectedGame === 'guess-betrayal') return state.players.length >= 4;
     if (state.selectedGame === 'meme') return state.players.length >= 3;
