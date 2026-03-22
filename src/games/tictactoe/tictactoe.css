@@ -1,0 +1,110 @@
+/* Tic-Tac-Toe / Noughts & Crosses */
+
+/* Shared solo game layout */
+.solo-game-layout {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 16px;
+}
+
+.solo-game-header {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.solo-game-title {
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.solo-game-score {
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.score-x { color: var(--accent-primary); }
+.score-o { color: var(--accent-secondary); }
+.score-draw { color: var(--text-muted); }
+
+/* TTT Board */
+.ttt-status {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: min(340px, 85vw);
+  aspect-ratio: 1;
+}
+
+.ttt-cell {
+  background: var(--bg-card);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ttt-cell:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 15px var(--glow-primary);
+}
+
+.ttt-cell:disabled {
+  cursor: default;
+}
+
+.ttt-cell.cell-x {
+  color: var(--accent-primary);
+  text-shadow: 0 0 10px var(--glow-primary);
+}
+
+.ttt-cell.cell-o {
+  color: var(--accent-secondary);
+  text-shadow: 0 0 10px var(--glow-secondary);
+}
+
+.ttt-cell.win-cell {
+  animation: winPulse 0.8s ease-in-out infinite alternate;
+  border-color: var(--accent-success);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+
+@keyframes winPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 255, 136, 0.6); }
+}
+
+@media (max-width: 400px) {
+  .ttt-cell {
+    font-size: 2rem;
+  }
+}

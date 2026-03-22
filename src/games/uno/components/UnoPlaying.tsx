@@ -124,7 +124,6 @@ export default function UnoPlaying({
   };
 
   const isMyTurn = currentPlayerId === currentPlayer?.id;
-  const canPlay = isMyTurn && playableCards.length > 0;
 
   // Color indicator hex values
   const colorHex: Record<string, string> = {

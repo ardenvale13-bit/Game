@@ -147,6 +147,14 @@ export default function Home() {
         >
           Join Room
         </button>
+
+        <button
+          className="btn btn-ghost btn-large w-full"
+          onClick={() => navigate('/solo')}
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '20px', marginTop: '4px' }}
+        >
+          Quick Play (Solo / Local)
+        </button>
       </div>
 
       <p className={`text-muted mt-4 ${entered ? 'actions-entered' : ''}`} style={{ fontSize: '0.9rem' }}>

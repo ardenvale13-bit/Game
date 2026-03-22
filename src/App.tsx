@@ -4,6 +4,8 @@ import CreateRoom from './pages/CreateRoomNew';
 import JoinRoom from './pages/JoinRoomNew';
 import Lobby from './pages/LobbyNew';
 import GameRouter from './pages/GameRouter';
+import SoloGames from './pages/SoloGames';
+import SoloGameRouter from './pages/SoloGameRouter';
 import './index.css';
 import './games/cah/cah.css';
 import './games/hangman/hangman.css';
@@ -21,6 +23,8 @@ function App() {
         <Route path="/join/:roomCode" element={<JoinRoom />} />
         <Route path="/lobby/:roomCode" element={<Lobby />} />
         <Route path="/play/:game/:roomCode" element={<GameRouter />} />
+        <Route path="/solo" element={<SoloGames />} />
+        <Route path="/solo/:game" element={<SoloGameRouter />} />
       </Routes>
     </BrowserRouter>
   );
