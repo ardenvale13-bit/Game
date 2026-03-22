@@ -28,7 +28,9 @@ interface BoardGameSync {
   forceEnded: boolean;
 }
 
-export function useBoardGameSync({ roomCode, playerId, isHost }: UseBoardGameSyncOptions): BoardGameSync {
+export function useBoardGameSync({ roomCode, playerId, isHost: _isHost }: UseBoardGameSyncOptions): BoardGameSync {
+  // _isHost kept in interface for callers; may be used for future host-specific logic
+  void _isHost;
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [receivedState, setReceivedState] = useState<unknown | null>(null);

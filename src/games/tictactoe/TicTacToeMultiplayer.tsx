@@ -49,7 +49,6 @@ export default function TicTacToeMultiplayer() {
     scores: { x: 0, o: 0, draws: 0 },
   });
 
-  const mySymbol: Cell = hostPlayer ? 'X' : 'O';
   const myTurnIndex = hostPlayer ? 0 : 1;
   const isMyTurn = gameState.turnIndex === myTurnIndex;
 
