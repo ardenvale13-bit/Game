@@ -1,5 +1,6 @@
 // Unified Lobby Store - Shared across all games
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export interface Player {
   id: string;
@@ -28,6 +29,7 @@ interface LobbyState {
   // Game settings
   roundCount: number; // For Scribbl n' Draw: 3, 5, or 10; WMLT: 5, 10, 15
   gbCategory: string; // Guess Betrayal category
+  unoMode: 'classic' | 'chaos';
 }
 
 interface LobbyActions {
@@ -48,6 +50,7 @@ interface LobbyActions {
   selectGame: (game: GameType) => void;
   setRoundCount: (count: number) => void;
   setGbCategory: (cat: string) => void;
+  setUnoMode: (mode: 'classic' | 'chaos') => void;
   startGame: () => void;
   endGame: () => void;
 
@@ -70,9 +73,10 @@ const initialState: LobbyState = {
   isInGame: false,
   roundCount: 3,
   gbCategory: 'blend',
+  unoMode: 'classic',
 };
 
-const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
+const useLobbyStore = create<LobbyState & LobbyActions>()(persist((set, get) => ({
   ...initialState,
 
   // Room setup
@@ -115,6 +119,7 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
   selectGame: (game) => set({ selectedGame: game }),
   setRoundCount: (count) => set({ roundCount: count }),
   setGbCategory: (cat) => set({ gbCategory: cat }),
+  setUnoMode: (mode) => set({ unoMode: mode }),
 
   startGame: () => set({ isInGame: true }),
 
@@ -156,6 +161,20 @@ const useLobbyStore = create<LobbyState & LobbyActions>((set, get) => ({
   getLeaderboard: () => {
     return [...get().players].sort((a, b) => b.score - a.score);
   },
+}), {
+  name: 'party_lobby_state',
+  storage: createJSONStorage(() => sessionStorage),
+  partialize: (state) => ({
+    roomCode: state.roomCode,
+    roomName: state.roomName,
+    players: state.players,
+    currentPlayerId: state.currentPlayerId,
+    selectedGame: state.selectedGame,
+    isInGame: state.isInGame,
+    roundCount: state.roundCount,
+    gbCategory: state.gbCategory,
+    unoMode: state.unoMode,
+  }),
 }));
 
 export default useLobbyStore;

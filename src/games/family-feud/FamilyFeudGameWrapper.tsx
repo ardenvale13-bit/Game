@@ -167,9 +167,9 @@ export default function FamilyFeudGameWrapper() {
 
     broadcastTeamUpdate();
 
-    // Start first face-off
+    // Initialize round one and start the first face-off.
     setTimeout(() => {
-      ffStore.getState().startFaceOff();
+      ffStore.getState().startGame();
       broadcastPhaseState('ff_face_off');
     }, 500);
   }, [hostPlayer, broadcastTeamUpdate, broadcastPhaseState]);
@@ -213,7 +213,6 @@ export default function FamilyFeudGameWrapper() {
       });
     } else {
       ffStore.getState().nextRound();
-      ffStore.getState().startFaceOff();
       broadcastPhaseState('ff_face_off');
     }
   }, [hostPlayer, broadcastPhaseState, lobbyStore]);

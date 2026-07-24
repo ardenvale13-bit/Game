@@ -67,7 +67,10 @@ export default function UnoPlaying({
 
   const jumpInCards = useMemo(() => {
     if (!player || !topCard || mode !== 'chaos') return [];
-    return player.hand.filter((c) => cardEquals(c, topCard));
+    const safeJumpValues = new Set(['1', '2', '3', '4', '5', '6', '8', '9']);
+    return player.hand.filter((card) =>
+      safeJumpValues.has(card.value) && cardEquals(card, topCard)
+    );
   }, [player, topCard, mode]);
 
   // Other players (everyone except current)

@@ -17,10 +17,13 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost, onForceEnd }:
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isReady, setIsReady] = useState(false);
   const store = useGuessBetrayalStore;
+  const receivedStateRef = useRef(false);
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
     setIsReady(false);
+    receivedStateRef.current = false;
+    const stateRequestTimers: ReturnType<typeof setTimeout>[] = [];
 
     const channel = supabase.channel(`game:gb:${roomCode}`, {
       config: { broadcast: { self: false } },
@@ -37,6 +40,7 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost, onForceEnd }:
       // Round start — question, phase, timer
       channel.on('broadcast', { event: 'gb_round_start' }, ({ payload }) => {
         if (!payload) return;
+        receivedStateRef.current = true;
         const { question, round, maxRounds, phase, timeRemaining, category } = payload as {
           question: string;
           round: number;
@@ -61,6 +65,34 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost, onForceEnd }:
           category: category as any,
           shuffledAnswers: [],
           players,
+        });
+      });
+
+      // Full state recovery for refreshes and clients that missed round start.
+      channel.on('broadcast', { event: 'gb_full_state' }, ({ payload }) => {
+        if (!payload) return;
+        receivedStateRef.current = true;
+        const state = payload as {
+          players: ReturnType<typeof store.getState>['players'];
+          phase: GBPhase;
+          currentRound: number;
+          maxRounds: number;
+          category: ReturnType<typeof store.getState>['category'];
+          currentQuestion: string;
+          usedQuestions: string[];
+          shuffledAnswers: GBAnswer[];
+          timeRemaining: number;
+        };
+        store.setState({
+          players: state.players,
+          phase: state.phase,
+          currentRound: state.currentRound,
+          maxRounds: state.maxRounds,
+          category: state.category,
+          currentQuestion: state.currentQuestion,
+          usedQuestions: state.usedQuestions,
+          shuffledAnswers: state.shuffledAnswers,
+          timeRemaining: state.timeRemaining,
         });
       });
 
@@ -149,16 +181,53 @@ export function useGuessBetrayalSync({ roomCode, playerId, isHost, onForceEnd }:
         const { senderId, guesses } = payload as { senderId: string; guesses: Record<string, string> };
         store.getState().submitGuesses(senderId, guesses);
       });
+
+      channel.on('broadcast', { event: 'gb_request_state' }, () => {
+        const state = store.getState();
+        channel.send({
+          type: 'broadcast',
+          event: 'gb_full_state',
+          payload: {
+            players: state.players.map((player) => ({
+              ...player,
+              answer: '',
+              guesses: {},
+            })),
+            phase: state.phase,
+            currentRound: state.currentRound,
+            maxRounds: state.maxRounds,
+            category: state.category,
+            currentQuestion: state.currentQuestion,
+            usedQuestions: state.usedQuestions,
+            shuffledAnswers: state.shuffledAnswers,
+            timeRemaining: state.timeRemaining,
+          },
+        });
+      });
     }
 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         channelRef.current = channel;
         setIsReady(true);
+        if (!isHost) {
+          for (const delay of [0, 500, 1500]) {
+            stateRequestTimers.push(setTimeout(() => {
+              if (!receivedStateRef.current) {
+                channel.send({
+                  type: 'broadcast',
+                  event: 'gb_request_state',
+                  payload: {},
+                });
+              }
+            }, delay));
+          }
+        }
       }
     });
 
     return () => {
+      stateRequestTimers.forEach(clearTimeout);
       channel.unsubscribe();
       channelRef.current = null;
       setIsReady(false);

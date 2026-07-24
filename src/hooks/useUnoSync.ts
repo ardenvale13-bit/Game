@@ -164,8 +164,9 @@ export function useUnoSync({
       channel.on('broadcast', { event: 'uno_draw_card' }, ({ payload }) => {
         if (!payload) return;
         const { playerId: pid } = payload as { playerId: string };
+        const currentPlayer = store.getState().getCurrentPlayer();
+        if (currentPlayer?.id !== pid) return;
         store.getState().drawCard(pid);
-        store.getState().nextTurn();
         const fullState = store.getState().getFullState();
         channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
       });
@@ -192,9 +193,14 @@ export function useUnoSync({
       channel.on('broadcast', { event: 'uno_jump_in' }, ({ payload }) => {
         if (!payload) return;
         const { playerId: pid, cardId } = payload as { playerId: string; cardId: string };
-        store.getState().jumpIn(pid, cardId);
-        const fullState = store.getState().getFullState();
-        channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+        if (store.getState().jumpIn(pid, cardId)) {
+          const player = store.getState().players.find((p) => p.id === pid);
+          if (player?.hand.length === 0) {
+            store.getState().endRound(pid);
+          }
+          const fullState = store.getState().getFullState();
+          channel.send({ type: 'broadcast', event: 'uno_game_state', payload: fullState });
+        }
       });
 
       // Non-host swap hands (Chaos mode, 7 card)
@@ -411,8 +417,9 @@ export function useUnoSync({
 
     if (isHost) {
       if (playerId) {
+        const currentPlayer = store.getState().getCurrentPlayer();
+        if (currentPlayer?.id !== playerId) return;
         store.getState().drawCard(playerId);
-        store.getState().nextTurn();
         broadcastGameState();
       }
     } else {
@@ -431,6 +438,7 @@ export function useUnoSync({
     if (isHost) {
       if (playerId) {
         store.getState().callUno(playerId);
+        broadcastGameState();
       }
     } else {
       channel.send({
@@ -439,7 +447,7 @@ export function useUnoSync({
         payload: { callerId: playerId },
       });
     }
-  }, [isHost, playerId]);
+  }, [isHost, playerId, broadcastGameState]);
 
   const sendCatchUno = useCallback(
     (targetId: string) => {
@@ -469,8 +477,13 @@ export function useUnoSync({
 
       if (isHost) {
         if (playerId) {
-          store.getState().jumpIn(playerId, cardId);
-          broadcastGameState();
+          if (store.getState().jumpIn(playerId, cardId)) {
+            const player = store.getState().players.find((p) => p.id === playerId);
+            if (player?.hand.length === 0) {
+              store.getState().endRound(playerId);
+            }
+            broadcastGameState();
+          }
         }
       } else {
         channel.send({

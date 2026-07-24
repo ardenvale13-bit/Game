@@ -23,7 +23,7 @@ export default function UnoGameWrapper() {
 
   const currentPlayerId = lobbyStore.currentPlayerId;
   const hostPlayer = lobbyStore.isHost();
-  const gameMode = lobbyStore.gbCategory || 'classic'; // Reuse gbCategory field for uno mode
+  const gameMode = lobbyStore.unoMode;
 
   const handleForceEnd = useCallback(() => {
     unoStore.getState().reset();
@@ -100,7 +100,6 @@ export default function UnoGameWrapper() {
         const currentPlayer = state.getCurrentPlayer();
         if (currentPlayer) {
           state.drawCard(currentPlayer.id);
-          state.nextTurn();
           broadcastGameState();
         }
       }

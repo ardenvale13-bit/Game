@@ -196,7 +196,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
   playCard: (playerId, cardId, chosenColor) => {
     const state = get();
     const playerIdx = state.players.findIndex((p) => p.id === playerId);
-    if (playerIdx === -1 || state.currentTurnIndex !== playerIdx) {
+    if (state.phase !== 'playing' || playerIdx === -1 || state.currentTurnIndex !== playerIdx) {
       return false; // Not this player's turn
     }
 
@@ -208,6 +208,9 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
 
     const card = player.hand[cardIdx];
     const topCard = state.discardPile[state.discardPile.length - 1];
+    if ((card.value === 'wild' || card.value === 'wild4') && !chosenColor) {
+      return false;
+    }
 
     // Check if card is playable
     if (!canPlayCard(card, topCard, state.currentColor)) {
@@ -221,33 +224,35 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
         // Add to draw2 stack
         set((s) => ({
           drawStack: s.drawStack + 2,
+          currentColor: card.color,
+          currentTurnIndex: (playerIdx + s.direction + s.players.length) % s.players.length,
+          timeRemaining: s.turnTime,
           players: s.players.map((p) =>
             p.id === playerId
-              ? { ...p, hand: p.hand.filter((c) => c.id !== cardId) }
+              ? { ...p, hand: p.hand.filter((c) => c.id !== cardId), calledUno: false }
               : p
           ),
           discardPile: [...s.discardPile, card],
-          unoVulnerable: s.players.filter((p) => p.id === playerId && p.hand.length === 1).length > 0 ? playerId : s.unoVulnerable,
+          unoVulnerable: player.hand.length === 2 ? playerId : null,
         }));
         return true;
-      } else if (card.value === 'wild4' && (state.stackingWithWild4 || !state.stackingWithWild4)) {
+      } else if (card.value === 'wild4') {
         // Add wild4 to stack (wild4 can stack with anything)
-        if (chosenColor) {
-          set((s) => ({
-            drawStack: s.drawStack + 4,
-            stackingWithWild4: true,
-            currentColor: chosenColor,
-            players: s.players.map((p) =>
-              p.id === playerId
-                ? { ...p, hand: p.hand.filter((c) => c.id !== cardId) }
-                : p
-            ),
-            discardPile: [...s.discardPile, card],
-            unoVulnerable: s.players.filter((p) => p.id === playerId && p.hand.length === 1).length > 0 ? playerId : s.unoVulnerable,
-          }));
-          return true;
-        }
-        return false;
+        set((s) => ({
+          drawStack: s.drawStack + 4,
+          stackingWithWild4: true,
+          currentColor: chosenColor,
+          currentTurnIndex: (playerIdx + s.direction + s.players.length) % s.players.length,
+          timeRemaining: s.turnTime,
+          players: s.players.map((p) =>
+            p.id === playerId
+              ? { ...p, hand: p.hand.filter((c) => c.id !== cardId), calledUno: false }
+              : p
+          ),
+          discardPile: [...s.discardPile, card],
+          unoVulnerable: player.hand.length === 2 ? playerId : null,
+        }));
+        return true;
       } else {
         // Can't play, must draw
         return false;
@@ -259,8 +264,8 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
       const newState = { ...s };
       newState.players = s.players.map((p) =>
         p.id === playerId
-          ? { ...p, hand: p.hand.filter((c) => c.id !== cardId) }
-          : p
+          ? { ...p, hand: p.hand.filter((c) => c.id !== cardId), calledUno: false }
+          : { ...p, hand: [...p.hand] }
       );
       newState.discardPile = [...s.discardPile, card];
 
@@ -288,6 +293,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
         if (newState.mode === 'chaos') {
           newState.drawStack = 2;
           newState.stackingWithWild4 = false;
+          newState.currentTurnIndex = (playerIdx + newState.direction + s.players.length) % s.players.length;
         } else {
           newState.currentTurnIndex = (playerIdx + newState.direction + s.players.length) % s.players.length;
           const nextPlayer = newState.players[newState.currentTurnIndex];
@@ -312,6 +318,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
         if (newState.mode === 'chaos') {
           newState.drawStack = 4;
           newState.stackingWithWild4 = true;
+          newState.currentTurnIndex = (playerIdx + newState.direction + s.players.length) % s.players.length;
         } else {
           newState.currentTurnIndex = (playerIdx + newState.direction + s.players.length) % s.players.length;
           const nextPlayer = newState.players[newState.currentTurnIndex];
@@ -346,6 +353,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
             hand: hands[(i + 1) % newState.players.length],
           }));
         }
+        newState.currentTurnIndex = (playerIdx + newState.direction + s.players.length) % s.players.length;
       } else if (card.value === '7' && newState.mode === 'chaos') {
         // Current player will swap with someone (UI will handle selection)
         // For now, just mark that a swap is pending
@@ -372,7 +380,12 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
   drawCard: (playerId) => {
     const state = get();
     const playerIdx = state.players.findIndex((p) => p.id === playerId);
-    if (playerIdx === -1) {
+    if (state.phase !== 'playing' || playerIdx === -1 || state.currentTurnIndex !== playerIdx) {
+      return null;
+    }
+
+    if (state.drawStack > 0) {
+      get().applyDraw(state.drawStack);
       return null;
     }
 
@@ -398,13 +411,16 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
         drawnCard = newDrawPile.shift()!;
         const newPlayers = s.players.map((p, idx) =>
           idx === playerIdx
-            ? { ...p, hand: [...p.hand, drawnCard!] }
+            ? { ...p, hand: [...p.hand, drawnCard!], calledUno: false }
             : p
         );
         return {
           drawPile: newDrawPile,
           discardPile: newDiscardPile,
           players: newPlayers,
+          currentTurnIndex: (playerIdx + s.direction + s.players.length) % s.players.length,
+          unoVulnerable: s.unoVulnerable === playerId ? null : s.unoVulnerable,
+          timeRemaining: s.turnTime,
         };
       }
 
@@ -415,13 +431,17 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
   },
 
   callUno: (playerId) => {
-    set((state) => ({
-      players: state.players.map((p) =>
-        p.id === playerId ? { ...p, calledUno: true } : p
-      ),
-      unoVulnerable:
-        state.unoVulnerable === playerId ? null : state.unoVulnerable,
-    }));
+    set((state) => {
+      const player = state.players.find((p) => p.id === playerId);
+      if (!player || player.hand.length !== 1) return state;
+      return {
+        players: state.players.map((p) =>
+          p.id === playerId ? { ...p, calledUno: true } : p
+        ),
+        unoVulnerable:
+          state.unoVulnerable === playerId ? null : state.unoVulnerable,
+      };
+    });
   },
 
   catchUno: (catcherId, targetId) => {
@@ -443,8 +463,13 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
       }
 
       // Draw 2 penalty cards
-      const newState = { ...state };
-      newState.players[targetIdx] = { ...target };
+      const newState = {
+        ...state,
+        players: state.players.map((p) => ({ ...p, hand: [...p.hand] })),
+        drawPile: [...state.drawPile],
+        discardPile: [...state.discardPile],
+      };
+      newState.players[targetIdx].calledUno = false;
 
       for (let i = 0; i < 2; i++) {
         if (newState.drawPile.length === 0 && newState.discardPile.length > 1) {
@@ -471,7 +496,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
 
   jumpIn: (playerId, cardId) => {
     const state = get();
-    if (state.mode !== 'chaos') {
+    if (state.mode !== 'chaos' || state.drawStack > 0) {
       return false;
     }
 
@@ -488,23 +513,26 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
 
     const card = player.hand[cardIdx];
     const topCard = state.discardPile[state.discardPile.length - 1];
+    const safeJumpValues = new Set(['1', '2', '3', '4', '5', '6', '8', '9']);
 
-    // Check for exact match (same color and value)
-    if (!cardEquals(card, topCard)) {
+    // Action cards need their normal targeting/effect flow, so jump-in is kept
+    // to exact-match number cards where the transition is unambiguous.
+    if (!cardEquals(card, topCard) || !safeJumpValues.has(card.value)) {
       return false;
     }
 
-    // Play the card and jump turn to this player
+    // Play the card and continue from the player after the jumper.
     set((s) => ({
       players: s.players.map((p) =>
         p.id === playerId
-          ? { ...p, hand: p.hand.filter((c) => c.id !== cardId) }
+          ? { ...p, hand: p.hand.filter((c) => c.id !== cardId), calledUno: false }
           : p
       ),
       discardPile: [...s.discardPile, card],
-      currentTurnIndex: playerIdx,
+      currentTurnIndex: (playerIdx + s.direction + s.players.length) % s.players.length,
       currentColor: card.color,
       timeRemaining: s.turnTime,
+      unoVulnerable: player.hand.length === 2 ? playerId : null,
     }));
 
     return true;
@@ -515,15 +543,30 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
     const playerIdx = state.players.findIndex((p) => p.id === playerId);
     const targetIdx = state.players.findIndex((p) => p.id === targetId);
 
-    if (playerIdx === -1 || targetIdx === -1) {
+    if (
+      state.mode !== 'chaos' ||
+      playerIdx === -1 ||
+      targetIdx === -1 ||
+      playerIdx === targetIdx ||
+      state.currentTurnIndex !== playerIdx ||
+      state.discardPile[state.discardPile.length - 1]?.value !== '7'
+    ) {
       return;
     }
 
     set((s) => {
-      const temp = s.players[playerIdx].hand;
-      s.players[playerIdx].hand = s.players[targetIdx].hand;
-      s.players[targetIdx].hand = temp;
-      return s;
+      const playerHand = s.players[playerIdx].hand;
+      const targetHand = s.players[targetIdx].hand;
+      return {
+        players: s.players.map((player, index) => {
+          if (index === playerIdx) return { ...player, hand: targetHand, calledUno: false };
+          if (index === targetIdx) return { ...player, hand: playerHand, calledUno: false };
+          return player;
+        }),
+        currentTurnIndex: (playerIdx + s.direction + s.players.length) % s.players.length,
+        unoVulnerable: null,
+        timeRemaining: s.turnTime,
+      };
     });
   },
 
@@ -531,11 +574,14 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
     set((s) => {
       const hands = s.players.map((p) => p.hand);
       const newHands = [hands[hands.length - 1], ...hands.slice(0, -1)];
-      s.players = s.players.map((p, i) => ({
-        ...p,
-        hand: newHands[i],
-      }));
-      return s;
+      return {
+        players: s.players.map((p, i) => ({
+          ...p,
+          hand: newHands[i],
+          calledUno: false,
+        })),
+        unoVulnerable: null,
+      };
     });
   },
 
@@ -568,10 +614,11 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
 
   applyDraw: (count) => {
     set((state) => {
-      const nextIdx =
-        (state.currentTurnIndex + state.direction + state.players.length) %
-        state.players.length;
-      const nextPlayer = state.players[nextIdx];
+      const targetIdx = state.currentTurnIndex;
+      const players = state.players.map((player) => ({
+        ...player,
+        hand: [...player.hand],
+      }));
       let newDrawPile = [...state.drawPile];
       let newDiscardPile = [...state.discardPile];
 
@@ -587,19 +634,21 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
           newDiscardPile = [topCard];
         }
         if (newDrawPile.length > 0) {
-          nextPlayer.hand.push(newDrawPile.shift()!);
+          players[targetIdx].hand.push(newDrawPile.shift()!);
         }
       }
 
+      players[targetIdx].calledUno = false;
       return {
         currentTurnIndex:
-          (nextIdx + state.direction + state.players.length) %
+          (targetIdx + state.direction + state.players.length) %
           state.players.length,
         drawStack: 0,
         stackingWithWild4: false,
-        players: state.players,
+        players,
         drawPile: newDrawPile,
         discardPile: newDiscardPile,
+        unoVulnerable: state.unoVulnerable === players[targetIdx].id ? null : state.unoVulnerable,
         timeRemaining: state.turnTime,
       };
     });
@@ -622,7 +671,7 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
           (sum, card) => sum + card.points,
           0
         );
-        scoreBreakdown[p.id] = playerPoints;
+        scoreBreakdown[p.id] = 0;
         totalPoints += playerPoints;
       }
     });
@@ -661,8 +710,15 @@ const useUnoStore = create<UnoState & UnoActions>((set, get) => ({
       return [];
     }
 
-    return player.hand.filter((c) =>
-      canPlayCard(c, topCard, state.currentColor)
+    if (state.mode === 'chaos' && state.drawStack > 0) {
+      return player.hand.filter((card) =>
+        card.value === 'wild4' ||
+        (card.value === 'draw2' && !state.stackingWithWild4)
+      );
+    }
+
+    return player.hand.filter((card) =>
+      canPlayCard(card, topCard, state.currentColor)
     );
   },
 

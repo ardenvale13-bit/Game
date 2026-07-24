@@ -26,12 +26,17 @@ export default function Lobby() {
     selectedGame,
     roundCount,
     gbCategory,
+    unoMode,
     selectGame,
     setRoundCount,
     setGbCategory,
+    setUnoMode,
     startGame,
     leaveLobby,
     setPlayers,
+    setRoomCode,
+    setCurrentPlayer,
+    addPlayer,
     isHost,
     canStartGame,
     updatePlayerName,
@@ -44,6 +49,27 @@ export default function Lobby() {
   // it triggers a re-render and the realtime hook picks it up.
   const [currentPresencePlayer, setCurrentPresencePlayer] = useState<PresencePlayer | null>(null);
   const presenceInitRef = useRef(false);
+
+  // Recover the lobby identity when arriving from an older session that predates
+  // the persisted lobby store, or when the in-memory state was otherwise cleared.
+  useEffect(() => {
+    if (currentPlayerId) return;
+    const session = getPlayerSession();
+    if (!session || session.roomCode !== roomCode) {
+      navigate(`/join/${roomCode}`, { replace: true });
+      return;
+    }
+
+    setRoomCode(session.roomCode);
+    setCurrentPlayer(session.playerId);
+    addPlayer({
+      id: session.playerId,
+      name: session.name,
+      avatarId: session.avatarId,
+      avatarFilename: session.avatarFilename,
+      isHost: session.isHost,
+    });
+  }, [currentPlayerId, roomCode, navigate, setRoomCode, setCurrentPlayer, addPlayer]);
 
   useEffect(() => {
     if (presenceInitRef.current || !currentPlayerId) return;
@@ -139,6 +165,9 @@ export default function Lobby() {
         if (event.payload.gbCategory !== undefined) {
           setGbCategory(event.payload.gbCategory as string);
         }
+        if (event.payload.unoMode === 'classic' || event.payload.unoMode === 'chaos') {
+          setUnoMode(event.payload.unoMode);
+        }
         break;
       case 'game_start':
         if (event.payload.roundCount !== undefined) {
@@ -147,11 +176,14 @@ export default function Lobby() {
         if (event.payload.gbCategory !== undefined) {
           setGbCategory(event.payload.gbCategory as string);
         }
+        if (event.payload.unoMode === 'classic' || event.payload.unoMode === 'chaos') {
+          setUnoMode(event.payload.unoMode);
+        }
         startGame();
         navigate(`/play/${event.payload.game}/${roomCode}`);
         break;
     }
-  }, [selectGame, setRoundCount, startGame, navigate, roomCode]);
+  }, [selectGame, setRoundCount, setGbCategory, setUnoMode, startGame, navigate, roomCode]);
 
   const { isConnected, sendEvent, updatePresence } = useRealtimeRoom({
     roomCode: roomCode || null,
@@ -194,7 +226,7 @@ export default function Lobby() {
     if (!canStartGame() || !selectedGame) return;
     startGame();
     // Broadcast to all clients to start (include settings)
-    sendEvent('game_start', { game: selectedGame, roundCount, gbCategory });
+    sendEvent('game_start', { game: selectedGame, roundCount, gbCategory, unoMode });
     navigate(`/play/${selectedGame}/${roomCode}`);
   };
 
@@ -306,6 +338,11 @@ export default function Lobby() {
   const handleGbCategoryChange = (cat: string) => {
     setGbCategory(cat);
     sendEvent('settings_changed', { gbCategory: cat });
+  };
+
+  const handleUnoModeChange = (mode: 'classic' | 'chaos') => {
+    setUnoMode(mode);
+    sendEvent('settings_changed', { unoMode: mode });
   };
 
   return (
@@ -692,16 +729,16 @@ export default function Lobby() {
               <div className="text-muted mb-1" style={{ fontSize: '0.85rem' }}>Mode</div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  className={`btn ${gbCategory === 'classic' ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                  onClick={() => handleGbCategoryChange('classic')}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === 'classic' ? 700 : 400 }}
+                  className={`btn ${unoMode === 'classic' ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleUnoModeChange('classic')}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: unoMode === 'classic' ? 700 : 400 }}
                 >
                   Classic
                 </button>
                 <button
-                  className={`btn ${gbCategory === 'chaos' ? 'btn-primary' : 'btn-secondary'} btn-small`}
-                  onClick={() => handleGbCategoryChange('chaos')}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: gbCategory === 'chaos' ? 700 : 400 }}
+                  className={`btn ${unoMode === 'chaos' ? 'btn-primary' : 'btn-secondary'} btn-small`}
+                  onClick={() => handleUnoModeChange('chaos')}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', fontWeight: unoMode === 'chaos' ? 700 : 400 }}
                 >
                   Chaos
                 </button>
