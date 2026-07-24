@@ -6,7 +6,7 @@ import type { GameType, Player } from '../store/lobbyStore';
 import { CATEGORY_INFO } from '../games/guess-betrayal/questionData';
 import { useRealtimeRoom } from '../hooks/useRealtimeRoom';
 import type { PresencePlayer, BroadcastEvent } from '../hooks/useRealtimeRoom';
-import { deleteRoom, updateRoomHost } from '../lib/roomService';
+import { deleteRoom, findRoom, updateRoomHost } from '../lib/roomService';
 import { clearPlayerSession, getPlayerSession, savePlayerSession } from '../lib/playerSession';
 
 const PLAYER_NAME_KEY = 'party_player_name';
@@ -17,6 +17,7 @@ export default function Lobby() {
   const [copied, setCopied] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [authoritativeHostId, setAuthoritativeHostId] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -37,18 +38,24 @@ export default function Lobby() {
     setRoomCode,
     setCurrentPlayer,
     addPlayer,
-    isHost,
     canStartGame,
     updatePlayerName,
   } = useLobbyStore();
 
-  const hostPlayer = isHost();
+  const hostPlayer = Boolean(
+    currentPlayerId &&
+    authoritativeHostId &&
+    currentPlayerId === authoritativeHostId
+  );
 
   // Build current player's presence data.
   // Uses useState so that when it resolves (possibly after first render),
   // it triggers a re-render and the realtime hook picks it up.
   const [currentPresencePlayer, setCurrentPresencePlayer] = useState<PresencePlayer | null>(null);
   const presenceInitRef = useRef(false);
+  const authoritativeHostIdRef = useRef<string | null>(null);
+  const latestPresencePlayersRef = useRef<PresencePlayer[]>([]);
+  const hostMigrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Recover the lobby identity when arriving from an older session that predates
   // the persisted lobby store, or when the in-memory state was otherwise cleared.
@@ -109,51 +116,127 @@ export default function Lobby() {
   // Ref for updatePresence so leave callback can use it
   const updatePresenceRef = useRef<((updates: Partial<PresencePlayer>) => Promise<void>) | null>(null);
 
-  // Sync player list from Presence — also handles host migration
-  const handlePlayersSync = useCallback((presencePlayers: PresencePlayer[]) => {
+  const applyAuthoritativeHost = useCallback((presencePlayers: PresencePlayer[], hostId: string) => {
     const synced: Player[] = presencePlayers.map(p => ({
       id: p.id,
       name: p.name,
       avatarId: p.avatarId,
       avatarFilename: p.avatarFilename,
-      isHost: p.isHost,
+      isHost: p.id === hostId,
       score: p.score,
     }));
+    setPlayers(synced);
 
-    // Host migration: if no player has isHost, promote the earliest joiner
-    const hasHost = presencePlayers.some(p => p.isHost);
-    if (!hasHost && presencePlayers.length > 0 && currentPlayerId) {
-      // Sort by joinedAt to pick the earliest joiner deterministically
-      const sorted = [...presencePlayers].sort((a, b) => a.joinedAt - b.joinedAt);
-      const newHostId = sorted[0].id;
-
-      if (newHostId === currentPlayerId) {
-        // I'm the new host — update everything
-        const promoted = synced.map(p =>
-          p.id === currentPlayerId ? { ...p, isHost: true } : p
-        );
-        setPlayers(promoted);
-
-        const session = getPlayerSession();
-        if (session) {
-          savePlayerSession({ ...session, isHost: true });
-        }
-
-        setCurrentPresencePlayer(prev => prev ? { ...prev, isHost: true } : prev);
-        updatePresenceRef.current?.({ isHost: true });
-
-        if (roomCode) {
-          updateRoomHost(roomCode, currentPlayerId);
-        }
-        return; // Don't setPlayers again below
-      }
+    if (!currentPlayerId) return;
+    const shouldBeHost = currentPlayerId === hostId;
+    const session = getPlayerSession();
+    if (session && session.roomCode === roomCode && session.isHost !== shouldBeHost) {
+      savePlayerSession({ ...session, isHost: shouldBeHost });
     }
 
-    setPlayers(synced);
+    setCurrentPresencePlayer(prev => {
+      if (!prev || prev.isHost === shouldBeHost) return prev;
+      return { ...prev, isHost: shouldBeHost };
+    });
+
+    const myPresence = presencePlayers.find(p => p.id === currentPlayerId);
+    if (myPresence && myPresence.isHost !== shouldBeHost) {
+      updatePresenceRef.current?.({ isHost: shouldBeHost });
+    }
   }, [setPlayers, currentPlayerId, roomCode]);
+
+  const scheduleHostMigration = useCallback(() => {
+    if (!roomCode || !currentPlayerId || hostMigrationTimerRef.current) return;
+
+    // Presence can briefly omit the real host while a page is reconnecting.
+    // Wait before migrating, then verify the room record and live presence again.
+    hostMigrationTimerRef.current = setTimeout(async () => {
+      hostMigrationTimerRef.current = null;
+      const presencePlayers = latestPresencePlayersRef.current;
+      if (presencePlayers.length === 0) return;
+
+      const room = await findRoom(roomCode);
+      if (!room) return;
+
+      const currentHostId = room.host_player_id;
+      if (presencePlayers.some(p => p.id === currentHostId)) {
+        authoritativeHostIdRef.current = currentHostId;
+        setAuthoritativeHostId(currentHostId);
+        applyAuthoritativeHost(presencePlayers, currentHostId);
+        return;
+      }
+
+      const nextHost = [...presencePlayers].sort((a, b) => a.joinedAt - b.joinedAt)[0];
+      if (!nextHost || nextHost.id !== currentPlayerId) return;
+
+      const updated = await updateRoomHost(roomCode, nextHost.id);
+      if (!updated) return;
+
+      authoritativeHostIdRef.current = nextHost.id;
+      setAuthoritativeHostId(nextHost.id);
+      applyAuthoritativeHost(presencePlayers, nextHost.id);
+    }, 4000);
+  }, [roomCode, currentPlayerId, applyAuthoritativeHost]);
+
+  // Sync player list from Presence using the room record as the host authority.
+  const handlePlayersSync = useCallback((presencePlayers: PresencePlayer[]) => {
+    latestPresencePlayersRef.current = presencePlayers;
+    const hostId = authoritativeHostIdRef.current;
+
+    if (!hostId) {
+      setPlayers(presencePlayers.map(p => ({
+        id: p.id,
+        name: p.name,
+        avatarId: p.avatarId,
+        avatarFilename: p.avatarFilename,
+        isHost: false,
+        score: p.score,
+      })));
+      return;
+    }
+
+    applyAuthoritativeHost(presencePlayers, hostId);
+
+    if (presencePlayers.some(p => p.id === hostId)) {
+      if (hostMigrationTimerRef.current) {
+        clearTimeout(hostMigrationTimerRef.current);
+        hostMigrationTimerRef.current = null;
+      }
+    } else {
+      scheduleHostMigration();
+    }
+  }, [setPlayers, applyAuthoritativeHost, scheduleHostMigration]);
+
+  useEffect(() => {
+    if (!roomCode) return;
+    let cancelled = false;
+
+    findRoom(roomCode).then(room => {
+      if (cancelled || !room) return;
+      authoritativeHostIdRef.current = room.host_player_id;
+      setAuthoritativeHostId(room.host_player_id);
+      if (latestPresencePlayersRef.current.length > 0) {
+        handlePlayersSync(latestPresencePlayersRef.current);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (hostMigrationTimerRef.current) {
+        clearTimeout(hostMigrationTimerRef.current);
+        hostMigrationTimerRef.current = null;
+      }
+    };
+  }, [roomCode, handlePlayersSync]);
 
   // Handle broadcast events from other clients
   const handleBroadcast = useCallback((event: BroadcastEvent) => {
+    // Lobby configuration and navigation are host-authoritative. Ignore forged
+    // or stale events from any other browser, even if it claims to be a host.
+    if (!authoritativeHostIdRef.current || event.senderId !== authoritativeHostIdRef.current) {
+      return;
+    }
+
     switch (event.type) {
       case 'game_selected':
         selectGame(event.payload.game as GameType);
@@ -197,12 +280,14 @@ export default function Lobby() {
 
   // When host selects a game, broadcast to everyone
   const handleSelectGame = (game: GameType) => {
+    if (!hostPlayer) return;
     selectGame(game);
     sendEvent('game_selected', { game });
   };
 
   // When host changes round count, broadcast to everyone
   const handleRoundCountChange = (count: number) => {
+    if (!hostPlayer) return;
     setRoundCount(count);
     sendEvent('settings_changed', { roundCount: count });
   };
@@ -223,7 +308,7 @@ export default function Lobby() {
   };
 
   const handleStartGame = () => {
-    if (!canStartGame() || !selectedGame) return;
+    if (!hostPlayer || !canStartGame() || !selectedGame) return;
     startGame();
     // Broadcast to all clients to start (include settings)
     sendEvent('game_start', { game: selectedGame, roundCount, gbCategory, unoMode });
@@ -336,11 +421,13 @@ export default function Lobby() {
   };
 
   const handleGbCategoryChange = (cat: string) => {
+    if (!hostPlayer) return;
     setGbCategory(cat);
     sendEvent('settings_changed', { gbCategory: cat });
   };
 
   const handleUnoModeChange = (mode: 'classic' | 'chaos') => {
+    if (!hostPlayer) return;
     setUnoMode(mode);
     sendEvent('settings_changed', { unoMode: mode });
   };

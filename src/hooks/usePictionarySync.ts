@@ -53,6 +53,33 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
       store.setState({ canvasSnapshot: dataUrl });
     });
 
+    // Every client listens for processed chat and guess results. Keeping these
+    // outside the host/non-host branches prevents messages disappearing if a
+    // player's role changes after reconnecting or host migration.
+    channel.on('broadcast', { event: 'chat_message' }, ({ payload }) => {
+      if (!payload) return;
+      const msg = payload as ChatMessage;
+      const existing = store.getState().messages;
+      if (!existing.find(m => m.id === msg.id)) {
+        store.setState({ messages: [...existing, msg] });
+      }
+    });
+
+    channel.on('broadcast', { event: 'guess_result' }, ({ payload }) => {
+      if (!payload) return;
+      const { playerId: guesserId, isCorrect, score } = payload as {
+        playerId: string;
+        isCorrect: boolean;
+        score: number;
+      };
+      if (isCorrect) {
+        store.getState().updatePlayer(guesserId, {
+          score,
+          hasGuessedCorrectly: true,
+        });
+      }
+    });
+
     // --- GAME STATE EVENTS (non-host clients listen) ---
     if (!isHost) {
       channel.on('broadcast', { event: 'game_state' }, ({ payload }) => {
@@ -113,33 +140,6 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
         }
       });
 
-      // Chat/guess messages
-      channel.on('broadcast', { event: 'chat_message' }, ({ payload }) => {
-        if (!payload) return;
-        const msg = payload as ChatMessage;
-        // Avoid duplicates
-        const existing = store.getState().messages;
-        if (!existing.find(m => m.id === msg.id)) {
-          store.setState({ messages: [...existing, msg] });
-        }
-      });
-
-      // Guess result
-      channel.on('broadcast', { event: 'guess_result' }, ({ payload }) => {
-        if (!payload) return;
-        const { playerId: guesserId, isCorrect, score } = payload as {
-          playerId: string;
-          isCorrect: boolean;
-          score: number;
-        };
-        if (isCorrect) {
-          store.getState().updatePlayer(guesserId, {
-            score: score, // absolute score from host
-            hasGuessedCorrectly: true,
-          });
-        }
-      });
-
       // Round end — reveal word
       channel.on('broadcast', { event: 'round_end' }, ({ payload }) => {
         if (!payload) return;
@@ -160,6 +160,8 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
           playerName: string;
           guess: string;
         };
+        const messageCountBefore = store.getState().messages.length;
+
         // Host validates the guess
         const isCorrect = store.getState().submitGuess(senderId, playerName, guess);
 
@@ -180,7 +182,7 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
         // Broadcast chat message
         const messages = store.getState().messages;
         const latestMsg = messages[messages.length - 1];
-        if (latestMsg) {
+        if (messages.length > messageCountBefore && latestMsg) {
           channel.send({
             type: 'broadcast',
             event: 'chat_message',

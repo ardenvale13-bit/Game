@@ -137,6 +137,8 @@ const useLobbyStore = create<LobbyState & LobbyActions>()(persist((set, get) => 
 
   canStartGame: () => {
     const state = get();
+    const currentPlayer = state.players.find(p => p.id === state.currentPlayerId);
+    if (!currentPlayer?.isHost) return false;
     if (!state.selectedGame) return false;
     if (state.selectedGame === 'cah') return state.players.length >= 3;
     if (state.selectedGame === 'codenames') return state.players.length >= 4;

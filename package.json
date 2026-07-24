@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "npm run test:uno",
+    "test": "npm run test:uno && npm run test:lobby",
     "test:uno": "esbuild tests/unoStore.test.ts --bundle --platform=node --format=esm --outfile=dist/unoStore.test.mjs && node --test dist/unoStore.test.mjs",
+    "test:lobby": "esbuild tests/lobbyStore.test.ts --bundle --platform=node --format=esm --outfile=dist/lobbyStore.test.mjs && node --test dist/lobbyStore.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
