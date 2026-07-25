@@ -587,6 +587,63 @@
   margin-top: 24px;
 }
 
+.cah-card-feedback {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+
+.cah-card-feedback button {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cah-card-feedback button:hover,
+.cah-card-feedback button.active {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.cah-card-feedback button.favorite {
+  color: #f9a8d4;
+  border-color: rgba(249, 168, 212, 0.55);
+}
+
+.cah-card-feedback button.veto {
+  color: #fca5a5;
+  border-color: rgba(252, 165, 165, 0.55);
+}
+
+.cah-favourites-list {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(249, 168, 212, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(249, 168, 212, 0.06);
+}
+
+.cah-favourites-list summary {
+  color: #f9a8d4;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cah-favourites-list ul {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+}
+
+.cah-favourites-list li + li {
+  margin-top: 8px;
+}
+
 /* Game over buttons — ombre gradient */
 .cah-game-over-actions .btn-primary {
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;

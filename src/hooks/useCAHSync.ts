@@ -6,6 +6,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import useCAHStore from '../games/cah/cahStore';
 import type { CAHPhase, CAHSubmission } from '../games/cah/cahStore';
 import type { WhiteCard, BlackCard } from '../games/cah/cardData';
+import type { CardRating } from '../games/cah/cardFeedback';
+import { recordAggregateCardRating } from '../games/cah/cardFeedback';
 import { isElevenLabsConfigured, generateSpeech, playBase64Audio, speakWithBrowser } from '../lib/elevenlabsTTS';
 
 interface UseCAHSyncOptions {
@@ -143,7 +145,7 @@ export function useCAHSync({ roomCode, playerId, isHost, onForceEnd }: UseCAHSyn
           submissions,
           players,
           phase: 'reveal',
-          timeRemaining: 5,
+          timeRemaining: 8,
         });
       });
 
@@ -253,6 +255,17 @@ export function useCAHSync({ roomCode, playerId, isHost, onForceEnd }: UseCAHSyn
             });
           }
         }, 50);
+      });
+
+      // Private card feedback — stored only on the host device, never shown in chat
+      channel.on('broadcast', { event: 'cah_card_feedback' }, ({ payload }) => {
+        if (!payload) return;
+        const { cardId, previous, next } = payload as {
+          cardId: string;
+          previous: CardRating | null;
+          next: CardRating | null;
+        };
+        recordAggregateCardRating(cardId, previous, next);
       });
 
       // Respond to state requests from newly connected clients
@@ -511,6 +524,20 @@ export function useCAHSync({ roomCode, playerId, isHost, onForceEnd }: UseCAHSyn
     });
   }, [playerId]);
 
+  const broadcastCardFeedback = useCallback((
+    cardId: string,
+    previous: CardRating | null,
+    next: CardRating | null,
+  ) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({
+      type: 'broadcast',
+      event: 'cah_card_feedback',
+      payload: { cardId, previous, next },
+    });
+  }, []);
+
   return {
     isReady,
     broadcastRoundStart,
@@ -525,6 +552,7 @@ export function useCAHSync({ roomCode, playerId, isHost, onForceEnd }: UseCAHSyn
     broadcastPickWinner,
     broadcastTTS,
     broadcastSwapCard,
+    broadcastCardFeedback,
     channel: channelRef,
   };
 }

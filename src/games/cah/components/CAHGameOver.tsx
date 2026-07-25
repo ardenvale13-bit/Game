@@ -1,5 +1,7 @@
 // CAH Game Over Component
 import useCAHStore from '../cahStore';
+import { blackCards } from '../cardData';
+import { getFavoriteBlackCardIds } from '../cardFeedback';
 
 interface CAHGameOverProps {
   onPlayAgain: () => void;
@@ -10,6 +12,8 @@ export default function CAHGameOver({ onPlayAgain, onLeave }: CAHGameOverProps) 
   const { getLeaderboard, currentPlayerId, resetGame } = useCAHStore();
   const leaderboard = getLeaderboard();
   const winner = leaderboard[0];
+  const favoriteIds = new Set(getFavoriteBlackCardIds());
+  const favoriteCards = blackCards.filter(card => favoriteIds.has(card.id));
 
   const handlePlayAgain = () => {
     resetGame();
@@ -74,6 +78,17 @@ export default function CAHGameOver({ onPlayAgain, onLeave }: CAHGameOverProps) 
             </div>
           ))}
         </div>
+
+        {favoriteCards.length > 0 && (
+          <details className="cah-favourites-list">
+            <summary>♥ Your saved favourites ({favoriteCards.length})</summary>
+            <ul>
+              {favoriteCards.map(card => (
+                <li key={card.id}>{card.text}</li>
+              ))}
+            </ul>
+          </details>
+        )}
 
         {/* Actions */}
         <div className="cah-game-over-actions">

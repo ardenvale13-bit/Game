@@ -6,6 +6,8 @@ import useLobbyStore from '../../store/lobbyStore';
 import useWMLTStore from './wmltStore';
 import { useWMLTSync } from '../../hooks/useWMLTSync';
 import { getRandomPrompts } from './wmltData';
+import { wmltPrompts } from './wmltData';
+import { getRecentlyPlayed, rememberRecentlyPlayed } from '../../lib/recentlyPlayed';
 import WMLTVoting from './components/WMLTVoting';
 import WMLTResults from './components/WMLTResults';
 import WMLTGameOver from './components/WMLTGameOver';
@@ -50,6 +52,10 @@ export default function WMLTGameWrapper() {
   // Initialize store from lobby
   useEffect(() => {
     wmltStore.getState().initFromLobby(lobbyStore.players);
+    const recentIndices = getRecentlyPlayed('wmlt')
+      .map(Number)
+      .filter(index => Number.isInteger(index) && index >= 0 && index < wmltPrompts.length);
+    wmltStore.setState({ usedPromptIndices: new Set(recentIndices) });
     // Use lobby round count for max rounds (default 10 if not set for wmlt)
     const rounds = lobbyStore.roundCount || 10;
     wmltStore.getState().setMaxRounds(rounds);
@@ -73,6 +79,7 @@ export default function WMLTGameWrapper() {
     if (prompts.length === 0) return;
 
     wmltStore.getState().startRound(prompts[0], indices[0]);
+    rememberRecentlyPlayed('wmlt', String(indices[0]), 120);
 
     // Small delay to ensure state is committed
     setTimeout(() => {

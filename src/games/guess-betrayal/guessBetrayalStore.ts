@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import type { QuestionCategory } from './questionData';
 import { getRandomQuestion } from './questionData';
+import { getRecentlyPlayed, rememberRecentlyPlayed } from '../../lib/recentlyPlayed';
 
 export type GBPhase =
   | 'lobby'
@@ -150,7 +151,7 @@ const useGuessBetrayalStore = create<GBGameState & GBActions>((set, get) => ({
       phase: 'answering',
       currentRound: 1,
       players,
-      usedQuestions: [],
+      usedQuestions: getRecentlyPlayed('guess-betrayal'),
       shuffledAnswers: [],
     });
     get().startRound();
@@ -159,6 +160,7 @@ const useGuessBetrayalStore = create<GBGameState & GBActions>((set, get) => ({
   startRound: () => {
     const state = get();
     const question = getRandomQuestion(state.category, state.usedQuestions);
+    rememberRecentlyPlayed('guess-betrayal', question, 100);
 
     const players = state.players.map(p => ({
       ...p,

@@ -9,6 +9,12 @@ import CAHPlaying from './components/CAHPlaying';
 import CAHJudging from './components/CAHJudging';
 import CAHReveal from './components/CAHReveal';
 import CAHGameOver from './components/CAHGameOver';
+import type { CardRating } from './cardFeedback';
+import {
+  recordAggregateCardRating,
+  setPersonalCardRating,
+} from './cardFeedback';
+import { clearCAHSession, loadCAHSession, saveCAHSession } from './cahSession';
 
 export default function CAHGameWrapper() {
   const navigate = useNavigate();
@@ -44,6 +50,8 @@ export default function CAHGameWrapper() {
   const isHost = currentPlayer?.isHost ?? false;
 
   const handleForceEnd = useCallback(() => {
+    const playerId = useCAHStore.getState().currentPlayerId;
+    if (roomCode && playerId) clearCAHSession(roomCode, playerId);
     resetGame();
     endLobbyGame();
     navigate(`/lobby/${roomCode}`);
@@ -63,6 +71,7 @@ export default function CAHGameWrapper() {
     broadcastPickWinner,
     broadcastTTS,
     broadcastSwapCard,
+    broadcastCardFeedback,
   } = useCAHSync({
     roomCode: roomCode || null,
     playerId: currentPlayerId,
@@ -79,6 +88,14 @@ export default function CAHGameWrapper() {
 
       const currentLobbyPlayer = useLobbyStore.getState().currentPlayerId;
       if (currentLobbyPlayer) setCurrentPlayer(currentLobbyPlayer);
+
+      const restored = roomCode && currentLobbyPlayer
+        ? loadCAHSession(roomCode, currentLobbyPlayer)
+        : null;
+      if (restored) {
+        useCAHStore.setState(restored);
+        return;
+      }
 
       // Set max rounds from lobby settings (default 10 if not CAH-specific)
       const rc = useLobbyStore.getState().roundCount;
@@ -97,6 +114,15 @@ export default function CAHGameWrapper() {
       });
     }
   }, [lobbyPlayers, cahPlayers.length, roomCode, setRoomCode, setCurrentPlayer, addPlayer, setMaxRounds]);
+
+  // Preserve hands, scores, and round state across a refresh in this tab.
+  useEffect(() => {
+    if (!roomCode || !currentPlayerId || phase === 'lobby') return;
+    saveCAHSession(roomCode, currentPlayerId, useCAHStore.getState());
+    return useCAHStore.subscribe((state) => {
+      saveCAHSession(roomCode, currentPlayerId, state);
+    });
+  }, [roomCode, currentPlayerId, phase]);
 
   // HOST: start game only AFTER the sync channel is confirmed connected
   useEffect(() => {
@@ -168,7 +194,7 @@ export default function CAHGameWrapper() {
         // The round-start broadcast effect will fire automatically
         // because nextRound() → startRound() sets phase='playing' with a new currentRound
       }
-    }, 5000);
+    }, 8000);
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,12 +314,14 @@ export default function CAHGameWrapper() {
   };
 
   const handlePlayAgain = () => {
+    if (roomCode && currentPlayerId) clearCAHSession(roomCode, currentPlayerId);
     resetGame();
     endLobbyGame();
     navigate(`/lobby/${roomCode}`);
   };
 
   const handleLeave = () => {
+    if (roomCode && currentPlayerId) clearCAHSession(roomCode, currentPlayerId);
     resetGame();
     endLobbyGame();
     navigate(`/lobby/${roomCode}`);
@@ -303,6 +331,17 @@ export default function CAHGameWrapper() {
     broadcastForceEnd();
     handleForceEnd();
   }, [broadcastForceEnd, handleForceEnd]);
+
+  const handleCardRating = (next: CardRating | null) => {
+    const cardId = useCAHStore.getState().currentBlackCard?.id;
+    if (!cardId) return;
+    const previous = setPersonalCardRating(cardId, next);
+    if (isHost) {
+      recordAggregateCardRating(cardId, previous, next);
+    } else {
+      broadcastCardFeedback(cardId, previous, next);
+    }
+  };
 
   // Render game controls
   const renderControls = () => (
@@ -367,7 +406,7 @@ export default function CAHGameWrapper() {
       return (
         <>
           {renderControls()}
-          <CAHReveal onLeave={handleLeave} />
+          <CAHReveal onLeave={handleLeave} onRateCard={handleCardRating} />
         </>
       );
     case 'game-over':

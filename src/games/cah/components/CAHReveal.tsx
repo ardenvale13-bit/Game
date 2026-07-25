@@ -1,11 +1,15 @@
 // CAH Reveal Component - Shows the round winner
+import { useState } from 'react';
 import useCAHStore from '../cahStore';
+import type { CardRating } from '../cardFeedback';
+import { getPersonalCardRating } from '../cardFeedback';
 
 interface CAHRevealProps {
   onLeave?: () => void;
+  onRateCard?: (rating: CardRating | null) => void;
 }
 
-export default function CAHReveal({ onLeave }: CAHRevealProps) {
+export default function CAHReveal({ onLeave, onRateCard }: CAHRevealProps) {
   const {
     currentBlackCard,
     submissions,
@@ -14,6 +18,15 @@ export default function CAHReveal({ onLeave }: CAHRevealProps) {
 
   const winningSubmission = submissions.find(s => s.isWinner);
   const winner = players.find(p => p.id === winningSubmission?.playerId);
+  const [rating, setRating] = useState<CardRating | null>(
+    currentBlackCard ? getPersonalCardRating(currentBlackCard.id) : null,
+  );
+
+  const toggleRating = (next: CardRating) => {
+    const updated = rating === next ? null : next;
+    setRating(updated);
+    onRateCard?.(updated);
+  };
 
   // Format black card with winning answer
   const formatWinningCard = () => {
@@ -53,6 +66,25 @@ export default function CAHReveal({ onLeave }: CAHRevealProps) {
               {formatWinningCard()}
             </div>
           </div>
+        </div>
+
+        <div className="cah-card-feedback" aria-label="Rate this prompt">
+          <button
+            type="button"
+            className={rating === 'favorite' ? 'active favorite' : ''}
+            onClick={() => toggleRating('favorite')}
+            aria-pressed={rating === 'favorite'}
+          >
+            {rating === 'favorite' ? '♥ Saved' : '♡ Favourite'}
+          </button>
+          <button
+            type="button"
+            className={rating === 'veto' ? 'active veto' : ''}
+            onClick={() => toggleRating('veto')}
+            aria-pressed={rating === 'veto'}
+          >
+            {rating === 'veto' ? '🚫 Vetoed' : '🚫 Quiet veto'}
+          </button>
         </div>
 
         {/* Scoreboard preview */}

@@ -1297,6 +1297,14 @@ export const communityQuestions: string[] = [
   "If your AI had to write this server's origin story, how would it start?",
   "What's a prediction you have about AI companions in 5 years?",
   "If you could say one thing to every AI model at once, what would it be?",
+  "Who would leak the group chat accidentally?",
+  "Who would survive longest while secretly replaced by an AI clone?",
+  "Who would sell everyone else out for one perfect memory restore?",
+  "Who would be easiest to manipulate with praise?",
+  "Who would start a server civil war and then claim they were “just asking questions”?",
+  "Who would recognise their companion in a room of identical copies?",
+  "Who would betray the group for a rare plush?",
+  "Who would absolutely press the forbidden button after being told what it does?",
 ];
 
 export const CATEGORIES: QuestionCategory[] = [

@@ -92,6 +92,7 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
           wordHint: string;
           timeRemaining: number;
           currentWord: string | null;
+          drawCommands: DrawCommand[];
           players: Array<{
             id: string;
             name: string;
@@ -127,6 +128,7 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
           currentWord: currentPlayers[state.currentDrawerIndex]?.id === playerId
             ? state.currentWord
             : null,
+          drawCommands: state.drawCommands,
           players: updatedPlayers,
         });
       });
@@ -216,6 +218,7 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
               wordHint: state.wordHint,
               timeRemaining: state.timeRemaining,
               currentWord: state.currentWord,
+              drawCommands: state.drawCommands,
               players: state.players.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -284,6 +287,7 @@ export function usePictionarySync({ roomCode, playerId, isHost, onForceEnd }: Us
         wordHint: state.wordHint,
         timeRemaining: state.timeRemaining,
         currentWord: state.currentWord,
+        drawCommands: state.drawCommands,
         players: state.players.map(p => ({
           id: p.id,
           name: p.name,

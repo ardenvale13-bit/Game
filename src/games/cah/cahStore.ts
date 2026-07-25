@@ -1,7 +1,9 @@
 // Cards Against Humanity - Game Store
 import { create } from 'zustand';
 import type { BlackCard, WhiteCard } from './cardData';
-import { getRandomBlackCard, dealWhiteCards, shuffleArray, blackCards } from './cardData';
+import { getRandomBlackCard, dealWhiteCardsWithRecycle, shuffleArray, blackCards } from './cardData';
+import { getRecentlyPlayed, rememberRecentlyPlayed } from '../../lib/recentlyPlayed';
+import { getVetoedBlackCardIds } from './cardFeedback';
 
 export type CAHPhase = 
   | 'lobby'
@@ -138,8 +140,12 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
   
   addPlayer: (playerData) => {
     const state = get();
-    const hand = dealWhiteCards(state.cardsPerHand, state.usedWhiteCards);
-    const usedIds = hand.map(c => c.id);
+    const protectedCardIds = state.players.flatMap(player => player.hand.map(card => card.id));
+    const { cards: hand, nextUsedCardIds } = dealWhiteCardsWithRecycle(
+      state.cardsPerHand,
+      state.usedWhiteCards,
+      protectedCardIds,
+    );
     
     const player: CAHPlayer = {
       ...playerData,
@@ -152,7 +158,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
     
     set({
       players: [...state.players, player],
-      usedWhiteCards: [...state.usedWhiteCards, ...usedIds],
+      usedWhiteCards: nextUsedCardIds,
     });
   },
   
@@ -183,7 +189,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
       players,
       czarIndex: 0,
       czarRotation,
-      usedBlackCards: [],
+      usedBlackCards: getRecentlyPlayed('cah-black'),
       submissions: [],
       swapCooldowns: {},
     });
@@ -196,27 +202,43 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
     
     // Get a new black card
     let blackCard: BlackCard;
-    const availableBlackCards = blackCards.filter(c => !state.usedBlackCards.includes(c.id));
+    const vetoedCardIds = new Set(getVetoedBlackCardIds());
+    const eligibleBlackCards = blackCards.filter(card => !vetoedCardIds.has(card.id));
+    const availableBlackCards = eligibleBlackCards.filter(
+      card => !state.usedBlackCards.includes(card.id),
+    );
     
     if (availableBlackCards.length === 0) {
       // Reset if we've used all cards
-      blackCard = getRandomBlackCard();
+      const resetPool = eligibleBlackCards.length > 0 ? eligibleBlackCards : blackCards;
+      blackCard = resetPool[Math.floor(Math.random() * resetPool.length)] ?? getRandomBlackCard();
       set({ usedBlackCards: [blackCard.id] });
     } else {
       blackCard = availableBlackCards[Math.floor(Math.random() * availableBlackCards.length)];
       set({ usedBlackCards: [...state.usedBlackCards, blackCard.id] });
     }
+    rememberRecentlyPlayed('cah-black', blackCard.id, 150);
     
     // Reset player submission state and refill hands
+    let usedWhiteCards = [...state.usedWhiteCards];
+    const protectedCardIds = new Set(
+      state.players.flatMap(player => player.hand.map(card => card.id)),
+    );
+
     const players = state.players.map(p => {
       const cardsNeeded = state.cardsPerHand - p.hand.length;
       let newHand = [...p.hand];
       
       if (cardsNeeded > 0) {
-        const newCards = dealWhiteCards(cardsNeeded, state.usedWhiteCards);
+        const deal = dealWhiteCardsWithRecycle(
+          cardsNeeded,
+          usedWhiteCards,
+          [...protectedCardIds],
+        );
+        const newCards = deal.cards;
         newHand = [...p.hand, ...newCards];
-        // Track used cards
-        set(s => ({ usedWhiteCards: [...s.usedWhiteCards, ...newCards.map(c => c.id)] }));
+        usedWhiteCards = deal.nextUsedCardIds;
+        newCards.forEach(card => protectedCardIds.add(card.id));
       }
       
       return {
@@ -231,6 +253,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
       currentBlackCard: blackCard,
       submissions: [],
       players,
+      usedWhiteCards,
       phase: 'playing',
       timeRemaining: state.roundTime,
     });
@@ -322,7 +345,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
           : p
       ),
       phase: 'reveal',
-      timeRemaining: 5,
+      timeRemaining: 8,
     });
   },
   
@@ -381,7 +404,12 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
     if (!player.hand.find(c => c.id === cardId)) return;
 
     // Deal a replacement card
-    const newCards = dealWhiteCards(1, state.usedWhiteCards);
+    const protectedCardIds = state.players.flatMap(p => p.hand.map(card => card.id));
+    const { cards: newCards, nextUsedCardIds } = dealWhiteCardsWithRecycle(
+      1,
+      state.usedWhiteCards,
+      protectedCardIds,
+    );
     if (newCards.length === 0) return;
     const newCard = newCards[0];
 
@@ -391,7 +419,7 @@ const useCAHStore = create<CAHGameState & CAHActions>((set, get) => ({
       players: state.players.map(p =>
         p.id === playerId ? { ...p, hand: newHand } : p
       ),
-      usedWhiteCards: [...state.usedWhiteCards, newCard.id],
+      usedWhiteCards: nextUsedCardIds,
       swapCooldowns: { ...state.swapCooldowns, [playerId]: state.currentRound },
     });
   },

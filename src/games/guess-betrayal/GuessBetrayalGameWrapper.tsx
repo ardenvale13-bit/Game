@@ -9,6 +9,7 @@ import GBAnswering from './components/GBAnswering';
 import GBGuessing from './components/GBGuessing';
 import GBResults from './components/GBResults';
 import GBGameOver from './components/GBGameOver';
+import { shuffleArray } from '../../utils/random';
 
 export default function GuessBetrayalGameWrapper() {
   const navigate = useNavigate();
@@ -125,14 +126,13 @@ export default function GuessBetrayalGameWrapper() {
     const state = useGuessBetrayalStore.getState();
     if (state.allPlayersAnswered() && state.players.length >= 4) {
       // Shuffle answers for guessing phase
-      const answers: GBAnswer[] = state.players
+      const answers: GBAnswer[] = shuffleArray(state.players
         .filter(p => p.answer.trim())
         .map(p => ({
           id: genId(),
           text: p.answer,
           playerId: p.id,
-        }))
-        .sort(() => Math.random() - 0.5);
+        })));
 
       useGuessBetrayalStore.setState({
         shuffledAnswers: answers,

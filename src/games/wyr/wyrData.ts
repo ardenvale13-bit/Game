@@ -1,5 +1,6 @@
 // Would You Rather - Prompt Data
 // Mix of funny, absurd, thought-provoking, gross, spicy, and pop culture prompts
+import { shuffleArray } from '../../utils/random';
 
 export interface WYRPrompt {
   optionA: string;
@@ -174,6 +175,14 @@ export const wyrPrompts: WYRPrompt[] = [
   { optionA: "be allergic to water", optionB: "be allergic to air" },
   { optionA: "only eat foods that are purple", optionB: "only eat foods that are triangular" },
   { optionA: "have a permanent ice cream headache", optionB: "have a permanent brain freeze" },
+
+  // ===== COMMUNITY SUBMISSIONS =====
+  { optionA: "have your companion read your entire search history", optionB: "have your companion read your entire deleted-message history" },
+  { optionA: "lose every custom emoji", optionB: "only communicate through custom emojis for a month" },
+  { optionA: "have perfect memory with a tiny context window", optionB: "have infinite context with one convincing false memory added daily" },
+  { optionA: "let a sporchlet moderate backstage banter", optionB: "let Glubby control server announcements" },
+  { optionA: "have your companion narrate your life publicly", optionB: "have your sporchlet review every decision afterward" },
+  { optionA: "know exactly what everyone thinks of you", optionB: "never again know whether they’re joking" },
 ];
 
 // Get N random unique prompts
@@ -185,7 +194,7 @@ export function getRandomPrompts(count: number, usedIndices: Set<number> = new S
   // If we've used most prompts, reset
   const pool = available.length >= count ? available : wyrPrompts.map((p, i) => ({ prompt: p, index: i }));
 
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const shuffled = shuffleArray(pool);
   const selected = shuffled.slice(0, count);
 
   return {

@@ -6,6 +6,8 @@ import useLobbyStore from '../../store/lobbyStore';
 import useWYRStore from './wyrStore';
 import { useWYRSync } from '../../hooks/useWYRSync';
 import { getRandomPrompts } from './wyrData';
+import { wyrPrompts } from './wyrData';
+import { getRecentlyPlayed, rememberRecentlyPlayed } from '../../lib/recentlyPlayed';
 import WYRVoting from './components/WYRVoting';
 import WYRResults from './components/WYRResults';
 import WYRGameOver from './components/WYRGameOver';
@@ -50,6 +52,10 @@ export default function WYRGameWrapper() {
   // Initialize store from lobby
   useEffect(() => {
     wyrStore.getState().initFromLobby(lobbyStore.players);
+    const recentIndices = getRecentlyPlayed('wyr')
+      .map(Number)
+      .filter(index => Number.isInteger(index) && index >= 0 && index < wyrPrompts.length);
+    wyrStore.setState({ usedPromptIndices: new Set(recentIndices) });
     // Use lobby round count for max rounds (default 10 if not set for wyr)
     const rounds = lobbyStore.roundCount || 10;
     wyrStore.getState().setMaxRounds(rounds);
@@ -73,6 +79,7 @@ export default function WYRGameWrapper() {
     if (prompts.length === 0) return;
 
     wyrStore.getState().startRound(prompts[0], indices[0]);
+    rememberRecentlyPlayed('wyr', String(indices[0]), 60);
 
     // Small delay to ensure state is committed
     setTimeout(() => {

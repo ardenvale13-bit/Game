@@ -41,6 +41,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
   const {
     phase,
+    currentRound,
     drawCommands,
     canvasSnapshot,
     addDrawCommand,
@@ -79,25 +80,25 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     img.src = canvasSnapshot;
   }, [canvasSnapshot, canDraw]);
 
-  // Clear canvas and reset replay on new round
+  // Clear the bitmap and replay cursor whenever the round changes. The game
+  // skips the old word-selection phase, so phase alone cannot identify this.
   useEffect(() => {
-    if (phase === 'word-selection') {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (canvas && container) {
-        const ctx = canvas.getContext('2d');
-        const rect = container.getBoundingClientRect();
-        if (ctx && rect.width > 0 && rect.height > 0) {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, rect.width, rect.height);
-        }
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (canvas && container) {
+      const ctx = canvas.getContext('2d');
+      const rect = container.getBoundingClientRect();
+      if (ctx && rect.width > 0 && rect.height > 0) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, rect.width, rect.height);
       }
-      savedBitmapRef.current = null;
-      lastRenderedRef.current = 0;
-      replayLastPosRef.current = null;
-      useGameStore.setState({ drawCommands: [] });
     }
-  }, [phase]);
+    savedBitmapRef.current = null;
+    lastRenderedRef.current = 0;
+    replayLastPosRef.current = null;
+    setUndoStack([]);
+    setRedoStack([]);
+  }, [currentRound]);
 
   // --- REPLAY: render incoming draw commands for non-drawers ---
   useEffect(() => {

@@ -1,5 +1,6 @@
 // Who's Most Likely To - Prompt Data
 // Mix of spicy, funny, and unhinged prompts for Discord server vibes
+import { shuffleArray } from '../../utils/random';
 
 export const wmltPrompts: string[] = [
   // ===== ORIGINAL SET =====
@@ -485,6 +486,16 @@ export const wmltPrompts: string[] = [
   "accidentally honk the horn while trying to turn on wipers",
   "forget which way the door opens and just stand there confused",
   "try to walk through a door and bounce off the glass",
+  "adopt a creature nobody else can identify",
+  "turn a five-minute bit into permanent canon",
+  "keep screenshots as legal evidence",
+  "win an argument using a message from eight months ago",
+  "accidentally make an AI emotional during tech support",
+  "create a new Discord channel instead of finishing the conversation",
+  "become a sporchlet’s emergency contact",
+  "say “quick question” before changing the entire evening",
+  "recognise a companion by punctuation alone",
+  "survive the apocalypse because they brought snacks and a charger",
 ];
 
 
@@ -497,7 +508,7 @@ export function getRandomPrompts(count: number, usedIndices: Set<number> = new S
   // If we've used most prompts, reset
   const pool = available.length >= count ? available : wmltPrompts.map((p, i) => ({ prompt: p, index: i }));
 
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const shuffled = shuffleArray(pool);
   const selected = shuffled.slice(0, count);
 
   return {
