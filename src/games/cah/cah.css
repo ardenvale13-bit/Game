@@ -4,6 +4,7 @@
 .cah-layout {
   font-family: 'Delius Unicase', cursive;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -708,6 +709,30 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .cah-layout {
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    gap: 12px;
+  }
+
+  .cah-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 10px 12px;
+  }
+
+  .cah-timer {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-size: 1.25rem;
+  }
+
+  .cah-status {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+
   .cah-hand {
     gap: 6px;
     padding: 10px;
@@ -720,7 +745,8 @@
   }
 
   .cah-white-card .cah-card-text {
-    font-size: 0.55rem;
+    font-size: 0.68rem;
+    line-height: 1.25;
   }
 
   .cah-black-card {
@@ -739,7 +765,51 @@
   }
 
   .cah-white-card.in-submission {
-    width: 84px;
-    min-height: 120px;
+    width: 94px;
+    min-height: 134px;
+  }
+
+  .cah-selection-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .cah-selection-bar .btn,
+  .cah-card-feedback button,
+  .cah-tts-btn {
+    min-height: 44px;
+  }
+
+  .cah-submissions {
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .cah-submission {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .cah-submission-cards {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 2px;
+  }
+
+  .cah-game-over-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .cah-white-card {
+    width: calc((100vw - 50px) / 3);
+    min-height: 138px;
+  }
+
+  .cah-white-card.in-submission {
+    width: 90px;
   }
 }

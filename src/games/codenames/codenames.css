@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 12px;
   gap: 10px;
 }
@@ -683,6 +684,10 @@
 
 /* ====== RESPONSIVE ====== */
 @media (max-width: 900px) {
+  .cn-layout {
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
   .cn-game-area {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
@@ -694,7 +699,8 @@
   }
 
   .cn-card-word {
-    font-size: 0.55rem;
+    font-size: 0.65rem;
+    letter-spacing: 0;
   }
 
   .cn-vote-bubble {
@@ -703,9 +709,9 @@
   }
 
   .cn-lock-btn {
-    width: 18px;
-    height: 18px;
-    font-size: 0.5rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.65rem;
   }
 
   .cn-team-panel {
@@ -730,12 +736,72 @@
 }
 
 @media (max-width: 500px) {
+  .cn-header {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 8px 10px;
+  }
+
+  .cn-turn-indicator {
+    min-width: 0;
+    font-size: 0.85rem;
+  }
+
+  .cn-score-display {
+    gap: 8px;
+  }
+
+  .cn-card-front {
+    padding: 5px 2px;
+  }
+
   .cn-card-word {
-    font-size: 0.45rem;
+    font-size: clamp(0.58rem, 2.6vw, 0.68rem);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
   }
 
   .cn-board {
-    gap: 3px;
+    gap: 4px;
+    padding-inline: 0;
+  }
+
+  .cn-card,
+  .cn-card-front,
+  .cn-card-back {
+    border-radius: 6px;
+  }
+
+  .cn-lock-btn {
+    top: 1px;
+    right: 1px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .cn-vote-bubbles {
+    top: 1px;
+    left: 1px;
+  }
+
+  .cn-vote-bubble {
+    width: 26px;
+    height: 26px;
+  }
+
+  .cn-team-panel {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .cn-clue-bar {
+    padding: 8px;
+  }
+
+  .cn-clue-input,
+  .cn-number-select,
+  .cn-end-turn-btn {
+    min-height: 44px;
   }
 }
 
