@@ -11,6 +11,7 @@ import './games/cah/cah.css';
 import './games/hangman/hangman.css';
 import './games/wyr/wyr.css';
 import './games/guess-betrayal/guess-betrayal.css';
+import './games/who-said-that/who-said-that.css';
 import './games/uno/uno.css';
 
 function App() {

@@ -51,10 +51,85 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
   const canDraw = isCurrentPlayerDrawing() && phase === 'drawing';
   const canDrawRef = useRef(canDraw);
-  canDrawRef.current = canDraw;
+
+  useEffect(() => {
+    canDrawRef.current = canDraw;
+  }, [canDraw]);
 
   // Get canvas display dimensions
   const getCanvasRect = () => containerRef.current?.getBoundingClientRect() || null;
+
+  // Flood fill algorithm
+  const floodFill = useCallback((startX: number, startY: number, fillColor: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const x = Math.floor(startX * dpr);
+    const y = Math.floor(startY * dpr);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Convert hex to RGB
+    const hex = fillColor.replace('#', '');
+    const fillR = parseInt(hex.substring(0, 2), 16);
+    const fillG = parseInt(hex.substring(2, 4), 16);
+    const fillB = parseInt(hex.substring(4, 6), 16);
+
+    // Get target color at click position
+    const startIdx = (y * width + x) * 4;
+    const targetR = data[startIdx];
+    const targetG = data[startIdx + 1];
+    const targetB = data[startIdx + 2];
+    const targetA = data[startIdx + 3];
+
+    // Don't fill if clicking on same color
+    if (targetR === fillR && targetG === fillG && targetB === fillB) return;
+
+    const colorMatch = (idx: number) => {
+      return Math.abs(data[idx] - targetR) < 10 &&
+             Math.abs(data[idx + 1] - targetG) < 10 &&
+             Math.abs(data[idx + 2] - targetB) < 10 &&
+             Math.abs(data[idx + 3] - targetA) < 10;
+    };
+
+    const setPixel = (idx: number) => {
+      data[idx] = fillR;
+      data[idx + 1] = fillG;
+      data[idx + 2] = fillB;
+      data[idx + 3] = 255;
+    };
+
+    const stack: [number, number][] = [[x, y]];
+    const visited = new Set<string>();
+
+    while (stack.length > 0) {
+      const [cx, cy] = stack.pop()!;
+      const key = `${cx},${cy}`;
+
+      if (visited.has(key)) continue;
+      if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+
+      const idx = (cy * width + cx) * 4;
+      if (!colorMatch(idx)) continue;
+
+      visited.add(key);
+      setPixel(idx);
+
+      stack.push([cx + 1, cy]);
+      stack.push([cx - 1, cy]);
+      stack.push([cx, cy + 1]);
+      stack.push([cx, cy - 1]);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }, []);
 
   // --- SNAPSHOT: render canvas snapshot from undo/redo sync ---
   useEffect(() => {
@@ -93,7 +168,6 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         ctx.fillRect(0, 0, rect.width, rect.height);
       }
     }
-    savedBitmapRef.current = null;
     lastRenderedRef.current = 0;
     replayLastPosRef.current = null;
     setUndoStack([]);
@@ -158,7 +232,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     }
 
     lastRenderedRef.current = drawCommands.length;
-  }, [drawCommands.length, canDraw]);
+  }, [drawCommands, canDraw, floodFill]);
 
   // Save current canvas state to undo stack
   const saveToHistory = useCallback(() => {
@@ -267,9 +341,6 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canDraw, handleUndo, handleRedo]);
 
-  // Persistent bitmap ref — only used for the DRAWER to preserve their work across resize
-  const savedBitmapRef = useRef<HTMLCanvasElement | null>(null);
-
   // Helper: replay all draw commands directly onto the canvas (for non-drawers after resize)
   const replayAllCommands = useCallback((ctx: CanvasRenderingContext2D, rect: DOMRect) => {
     const cmds = useGameStore.getState().drawCommands;
@@ -313,15 +384,30 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
     lastRenderedRef.current = cmds.length;
     replayLastPosRef.current = null;
-  }, []);
+  }, [floodFill]);
 
-  // Set up canvas dimensions using ResizeObserver
+  // Set up canvas dimensions. Android reports several intermediate viewport
+  // sizes while rotating, so resize only after the layout has settled and keep
+  // one copy of the pre-rotation bitmap for the whole resize burst.
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const resizeCanvas = () => {
+    const copyCanvas = () => {
+      if (canvas.width < 1 || canvas.height < 1) return null;
+
+      const copy = document.createElement('canvas');
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      const copyCtx = copy.getContext('2d');
+      if (!copyCtx) return null;
+
+      copyCtx.drawImage(canvas, 0, 0);
+      return copy;
+    };
+
+    const resizeCanvas = (preservedBitmap: HTMLCanvasElement | null = null) => {
       const rect = container.getBoundingClientRect();
       if (rect.width < 2 || rect.height < 2) return;
 
@@ -334,16 +420,10 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
 
       const isDrawer = canDrawRef.current;
 
-      // DRAWER: always try to save current canvas before resize
-      if (isDrawer && canvas.width > 0 && canvas.height > 0) {
-        const saveBitmap = document.createElement('canvas');
-        saveBitmap.width = canvas.width;
-        saveBitmap.height = canvas.height;
-        const tmpCtx = saveBitmap.getContext('2d');
-        if (tmpCtx) {
-          tmpCtx.drawImage(canvas, 0, 0);
-          savedBitmapRef.current = saveBitmap;
-        }
+      // A direct resize (including the initial layout) may not have gone
+      // through the debounced path, so take a copy here as a fallback.
+      if (isDrawer && !preservedBitmap) {
+        preservedBitmap = copyCanvas();
       }
 
       // Resize the canvas bitmap (this clears it)
@@ -359,8 +439,8 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
         newCtx.fillRect(0, 0, rect.width, rect.height);
 
         if (isDrawer) {
-          // DRAWER: restore their saved bitmap
-          const bitmap = savedBitmapRef.current;
+          // DRAWER: restore the bitmap captured before Android began rotating.
+          const bitmap = preservedBitmap;
           if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
             newCtx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, rect.width, rect.height);
           }
@@ -374,13 +454,44 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
     // Initial sizing
     resizeCanvas();
 
-    // ResizeObserver: fires when container dimensions actually change
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(resizeCanvas);
-    });
-    observer.observe(container);
+    let resizeTimer: number | undefined;
+    let resizeFrame: number | undefined;
+    let pendingBitmap: HTMLCanvasElement | null = null;
 
-    return () => observer.disconnect();
+    const scheduleResize = () => {
+      // End any in-progress gesture. Android cancels touches during rotation,
+      // and keeping the stale point would draw a line from the old orientation.
+      lastPosRef.current = null;
+      replayLastPosRef.current = null;
+
+      if (canDrawRef.current && !pendingBitmap) {
+        pendingBitmap = copyCanvas();
+      }
+
+      if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const bitmap = pendingBitmap;
+        pendingBitmap = null;
+        resizeFrame = window.requestAnimationFrame(() => resizeCanvas(bitmap));
+      }, 160);
+    };
+
+    // ResizeObserver catches the final CSS layout; the explicit viewport and
+    // orientation listeners cover Android browsers that delay observer updates.
+    const observer = new ResizeObserver(scheduleResize);
+    observer.observe(container);
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('orientationchange', scheduleResize);
+    window.visualViewport?.addEventListener('resize', scheduleResize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', scheduleResize);
+      window.removeEventListener('orientationchange', scheduleResize);
+      window.visualViewport?.removeEventListener('resize', scheduleResize);
+      if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+      if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
+    };
   }, [replayAllCommands]);
 
   // Get position from mouse/touch event
@@ -404,78 +515,6 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
       x: clientX - rect.left,
       y: clientY - rect.top,
     };
-  };
-
-  // Flood fill algorithm
-  const floodFill = (startX: number, startY: number, fillColor: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const x = Math.floor(startX * dpr);
-    const y = Math.floor(startY * dpr);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Convert hex to RGB
-    const hex = fillColor.replace('#', '');
-    const fillR = parseInt(hex.substring(0, 2), 16);
-    const fillG = parseInt(hex.substring(2, 4), 16);
-    const fillB = parseInt(hex.substring(4, 6), 16);
-
-    // Get target color at click position
-    const startIdx = (y * width + x) * 4;
-    const targetR = data[startIdx];
-    const targetG = data[startIdx + 1];
-    const targetB = data[startIdx + 2];
-    const targetA = data[startIdx + 3];
-
-    // Don't fill if clicking on same color
-    if (targetR === fillR && targetG === fillG && targetB === fillB) return;
-
-    const colorMatch = (idx: number) => {
-      return Math.abs(data[idx] - targetR) < 10 &&
-             Math.abs(data[idx + 1] - targetG) < 10 &&
-             Math.abs(data[idx + 2] - targetB) < 10 &&
-             Math.abs(data[idx + 3] - targetA) < 10;
-    };
-
-    const setPixel = (idx: number) => {
-      data[idx] = fillR;
-      data[idx + 1] = fillG;
-      data[idx + 2] = fillB;
-      data[idx + 3] = 255;
-    };
-
-    const stack: [number, number][] = [[x, y]];
-    const visited = new Set<string>();
-
-    while (stack.length > 0) {
-      const [cx, cy] = stack.pop()!;
-      const key = `${cx},${cy}`;
-
-      if (visited.has(key)) continue;
-      if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
-
-      const idx = (cy * width + cx) * 4;
-      if (!colorMatch(idx)) continue;
-
-      visited.add(key);
-      setPixel(idx);
-
-      stack.push([cx + 1, cy]);
-      stack.push([cx - 1, cy]);
-      stack.push([cx, cy + 1]);
-      stack.push([cx, cy - 1]);
-    }
-
-    ctx.putImageData(imageData, 0, 0);
   };
 
   // Draw on canvas (local drawing for the drawer)
@@ -642,6 +681,7 @@ export default function DrawingCanvas({ onDrawBroadcast, onClearBroadcast, onSna
           onTouchStart={handleStart}
           onTouchMove={handleMove}
           onTouchEnd={handleEnd}
+          onTouchCancel={handleEnd}
           style={{ touchAction: 'none', width: '100%', height: '100%', display: 'block' }}
         />
 

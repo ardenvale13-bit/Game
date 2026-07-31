@@ -677,8 +677,21 @@ h3 {
 
   /* ── Drawer on mobile: hide sidebars, maximize canvas ── */
   .game-layout.is-drawing {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
     grid-template-rows: 1fr;
     grid-template-columns: 1fr;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(6px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(6px, env(safe-area-inset-left));
+    overflow: hidden;
+    overscroll-behavior: none;
+    z-index: 100;
   }
 
   .game-layout.is-drawing .sidebar-left {
@@ -851,6 +864,11 @@ h3 {
   .game-layout.is-drawing {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
+    padding:
+      max(3px, env(safe-area-inset-top))
+      max(3px, env(safe-area-inset-right))
+      max(3px, env(safe-area-inset-bottom))
+      max(3px, env(safe-area-inset-left));
   }
 
   .game-layout.is-drawing .sidebar-left {

@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "npm run test:uno && npm run test:lobby && npm run test:randomization",
+    "test": "npm run test:uno && npm run test:lobby && npm run test:randomization && npm run test:who-said-that",
     "test:uno": "esbuild tests/unoStore.test.ts --bundle --platform=node --format=esm --outfile=dist/unoStore.test.mjs && node --test dist/unoStore.test.mjs",
     "test:lobby": "esbuild tests/lobbyStore.test.ts --bundle --platform=node --format=esm --outfile=dist/lobbyStore.test.mjs && node --test dist/lobbyStore.test.mjs",
     "test:randomization": "esbuild tests/randomization.test.ts --bundle --platform=node --format=esm --outfile=dist/randomization.test.mjs && node --test dist/randomization.test.mjs",
+    "test:who-said-that": "esbuild tests/whoSaidThatStore.test.ts --bundle --platform=node --format=esm --outfile=dist/whoSaidThatStore.test.mjs && node --test dist/whoSaidThatStore.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

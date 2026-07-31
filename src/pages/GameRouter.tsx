@@ -11,6 +11,7 @@ import WYRGameWrapper from '../games/wyr/WYRGameWrapper';
 import HangmanGameWrapper from '../games/hangman/HangmanGameWrapper';
 
 import GuessBetrayalGameWrapper from '../games/guess-betrayal/GuessBetrayalGameWrapper';
+import WhoSaidThatGameWrapper from '../games/who-said-that/WhoSaidThatGameWrapper';
 import MakeItMemeGameWrapper from '../games/meme/MakeItMemeGameWrapper';
 import FamilyFeudGameWrapper from '../games/family-feud/FamilyFeudGameWrapper';
 import UnoGameWrapper from '../games/uno/UnoGameWrapper';
@@ -45,6 +46,8 @@ export default function GameRouter() {
 
     case 'guess-betrayal':
       return <GuessBetrayalGameWrapper />;
+    case 'who-said-that':
+      return <WhoSaidThatGameWrapper />;
     case 'meme':
       return <MakeItMemeGameWrapper />;
     case 'familyfeud':

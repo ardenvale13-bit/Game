@@ -11,7 +11,7 @@ export interface Player {
   score: number; // Persists across games in same session
 }
 
-export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'wyr' | 'hangman' | 'guess-betrayal' | 'meme' | 'familyfeud' | 'uno' | 'tictactoe' | 'connect4' | 'checkers' | 'chess' | null;
+export type GameType = 'pictionary' | 'cah' | 'codenames' | 'wmlt' | 'wyr' | 'hangman' | 'guess-betrayal' | 'who-said-that' | 'meme' | 'familyfeud' | 'uno' | 'tictactoe' | 'connect4' | 'checkers' | 'chess' | null;
 
 interface LobbyState {
   // Room
@@ -151,6 +151,7 @@ const useLobbyStore = create<LobbyState & LobbyActions>()(persist((set, get) => 
     if (state.selectedGame === 'chess') return state.players.length === 2;
 
     if (state.selectedGame === 'guess-betrayal') return state.players.length >= 4;
+    if (state.selectedGame === 'who-said-that') return state.players.length >= 3;
     if (state.selectedGame === 'meme') return state.players.length >= 3;
     return state.players.length >= 2;
   },
